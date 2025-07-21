@@ -1,0 +1,21 @@
+package game.ui.discord.enumeration;
+
+public class Constants {
+    public static final String SUBMIT_SELECTION = "✅ Submit Selection";
+    public static final String BIRDS_NOT_SELECTED = "❌ Birds Selected";
+    public static final String BIRDS_SELECTED = "✅ Birds Selected";
+    public static final String BONUS_NOT_SELECTED = "❌ Bonus Selected";
+    public static final String BONUS_SELECTED = "✅ Bonus Selected";
+    public static final String FOOD_NOT_SELECTED = "❌ Food Selected";
+    public static final String FOOD_SELECTED = "✅ Food Selected";
+    public static final String CHOOSE_STARTING_HAND = "\uD83D\uDC50 Choose Starting Hand";
+    public static final String BIRDS_SELECTED_FIELD = "Birds selected:";
+    public static final String BONUS_SELECTED_FIELD = "Bonus selected:";
+    public static final String FOOD_SELECTED_FIELD = "Food selected:";
+    public static final String PICK_ACTION = "**\uD83C\uDFAF Pick which action to take: **";
+    public static final String CHOOSE_BIRD_TO_PLAY = "**🕊️ Choose a Bird to Play: **";
+    public static final String CHOOSE_FOOD_TO_USE = "**🍽️ Choose Food to Use: **";
+    public static final String CHOOSE_HABITAT = "**\uD83C\uDF0D Pick a habitat to play the bird in: **";
+    public static final String CHOOSE_BIRDS_TO_REMOVE_EGG = "**\uD83E\uDD5A Pick which birds to remove eggs from: **";
+    public static final String SAME_AGAIN = "Same again";
+}
