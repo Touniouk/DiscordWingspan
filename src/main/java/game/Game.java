@@ -245,11 +245,23 @@ public class Game {
         return bonusCards.stream().filter(b -> b.getId() == bonusId).findAny().orElseThrow(IllegalArgumentException::new);
     }
 
-    public Player getPlayerById(long userId) {
-        return this.players.stream().filter(p -> p.getUser().getIdLong() == userId).findAny().orElse(null);
+    public Player getPlayerById(long userId) throws GameInputException {
+        return this.players.stream().filter(p -> p.getUser().getIdLong() == userId).findAny()
+                .orElseThrow(() -> new GameInputException("This userId is not part of game `" + gameId + "`"));
     }
 
     public boolean allPlayersReady() {
         return players.stream().allMatch(p -> p.getState() == PlayerState.READY);
+    }
+
+    public void advanceTurn() {
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        if (currentPlayerIndex == 0) {
+            turnCounter++;
+        }
+    }
+
+    public Player getCurrentPlayer() {
+        return players.get(currentPlayerIndex);
     }
 }

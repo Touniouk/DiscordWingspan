@@ -2,7 +2,7 @@ package game.components.meta;
 
 import lombok.Getter;
 
-public enum Action {
+public enum BoardAction {
     PLAY_BIRD("Play a bird"),
     GAIN_FOOD("Gain food"),
     LAY_EGGS("Lay eggs"),
@@ -11,7 +11,7 @@ public enum Action {
     @Getter
     private final String label;
 
-    Action(String label) {
+    BoardAction(String label) {
         this.label = label;
     }
 }

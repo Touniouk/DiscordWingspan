@@ -1,6 +1,5 @@
 package game.ui.discord.commands;
 
-import game.Game;
 import game.Player;
 import game.components.subcomponents.BirdCard;
 import game.exception.GameInputException;
@@ -51,14 +50,13 @@ public class SeeBoard implements SlashCommand {
         User user = userOptional.orElseGet(event::getUser);
         boolean showHiddenInfo = user.getIdLong() == event.getUser().getIdLong();
 
-        Game currentGame;
+        Player currentPlayer;
         try {
-            currentGame = DiscordBotService.getInstance().getGameFromId(event, gameId);
+            currentPlayer = DiscordBotService.getInstance().getPlayerFromGame(event, gameId);
         } catch (GameInputException ex) {
             event.reply(ex.getMessage()).setEphemeral(true).queue();
             return;
         }
-        Player currentPlayer = currentGame.getPlayerById(event.getUser().getIdLong());
         event.replyEmbeds(getBoardEmbed(currentPlayer, showHiddenInfo).build())
                 .setEphemeral(true)
                 .queue();

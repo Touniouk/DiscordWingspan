@@ -18,4 +18,5 @@ public class Constants {
     public static final String CHOOSE_HABITAT = "**\uD83C\uDF0D Pick a habitat to play the bird in: **";
     public static final String CHOOSE_BIRDS_TO_REMOVE_EGG = "**\uD83E\uDD5A Pick which birds to remove eggs from: **";
     public static final String SAME_AGAIN = "Same again";
+    public static final String NONE = "None";
 }

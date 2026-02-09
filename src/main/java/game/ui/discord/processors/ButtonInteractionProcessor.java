@@ -7,6 +7,7 @@ import game.components.subcomponents.BirdCard;
 import game.components.subcomponents.BonusCard;
 import game.components.subcomponents.Card;
 import game.exception.GameInputException;
+import game.service.DiscordBotService;
 import game.service.GameService;
 import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.DiscordObject;
@@ -34,8 +35,15 @@ public class ButtonInteractionProcessor {
         String componentId = arr[0];
         String gameId = arr[1];
         long userId = event.getUser().getIdLong();
-        Game currentGame = GameService.getInstance().getGame(gameId);
-        Player currentPlayer = currentGame.getPlayerById(event.getUser().getIdLong());
+        Game currentGame;
+        Player currentPlayer;
+        try {
+            currentGame = DiscordBotService.getInstance().getGameFromId(event, gameId);
+            currentPlayer = currentGame.getPlayerById(event.getUser().getIdLong());
+        } catch (GameInputException ex) {
+            event.reply(ex.getMessage()).setEphemeral(true).queue();
+            return;
+        }
 
         try {
             switch (DiscordObject.valueOf(componentId)) {

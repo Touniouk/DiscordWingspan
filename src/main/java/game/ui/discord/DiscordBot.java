@@ -66,7 +66,7 @@ public class DiscordBot extends ListenerAdapter {
 
     @Override
     public void onStringSelectInteraction(StringSelectInteractionEvent event) {
-        logger.io("onStringSelectInteraction -> " + event.getInteraction());
+        logger.io("onStringSelectInteraction -> " + event.getInteraction().getMessage());
         StringSelectInteractionProcessor.handleCommand(event);
     }
 

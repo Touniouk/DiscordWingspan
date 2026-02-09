@@ -4,12 +4,13 @@ import game.Game;
 import game.Player;
 import game.components.enums.FoodType;
 import game.components.enums.HabitatEnum;
-import game.components.meta.Action;
+import game.components.meta.BoardAction;
 import game.components.meta.Habitat;
 import game.components.subcomponents.BirdCard;
 import game.components.subcomponents.BonusCard;
 import game.components.subcomponents.Card;
 import game.exception.GameInputException;
+import game.service.DiscordBotService;
 import game.service.GameService;
 import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.DiscordObject;
@@ -41,8 +42,16 @@ public class StringSelectInteractionProcessor {
         String[] arr = event.getComponentId().split(":");
         String componentId = arr[0];
         String gameId = arr[1];
-        Game currentGame = GameService.getInstance().getGame(gameId);
-        Player currentPlayer = currentGame.getPlayerById(event.getUser().getIdLong());
+        Game currentGame;
+        Player currentPlayer;
+        try {
+            currentGame = DiscordBotService.getInstance().getGameFromId(event, gameId);
+            currentPlayer = currentGame.getPlayerById(event.getUser().getIdLong());
+        } catch (GameInputException ex) {
+            event.reply(ex.getMessage()).setEphemeral(true).queue();
+            return;
+        }
+
         switch (DiscordObject.valueOf(componentId)) {
             case PICK_STARTING_HAND_BIRD_SELECT_MENU -> pickStartingHandBirdSelectMenu(event, currentGame, currentPlayer);
             case PICK_STARTING_HAND_BONUS_SELECT_MENU -> pickStartingHandBonusSelectMenu(event, currentGame, currentPlayer);
@@ -56,6 +65,10 @@ public class StringSelectInteractionProcessor {
     }
 
     private static void takeTurnActionChoicePlayBirdRemoveEggs(StringSelectInteractionEvent event, String newMessage, Game currentGame, Player currentPlayer) {
+        takeTurnActionChoicePlayBirdRemoveEggs(event, newMessage, currentGame, currentPlayer, false);
+    }
+
+    private static void takeTurnActionChoicePlayBirdRemoveEggs(StringSelectInteractionEvent event, String newMessage, Game currentGame, Player currentPlayer, boolean skipped) {
         // If we picked the same bird twice, check that it has 2 eggs
         String[] message = newMessage.split("\n\n");
         String habitatName = message[3].substring(message[3].indexOf(Constants.CHOOSE_HABITAT) + Constants.CHOOSE_HABITAT.length());
@@ -79,11 +92,12 @@ public class StringSelectInteractionProcessor {
         }
 
         // We've done all the steps and can now play the bird
+        String removeEggsFromString = skipped ? Constants.NONE : StringUtil.getListAsString(event.getValues(), ", ");
         event.editMessage(message[0] + "\n\n" + // Pick action
                         message[1] + "\n\n" + // Choose bird
                         message[2] + "\n\n" + // Choose food
                         message[3] + "\n\n" + // Pick a Habitat
-                        Constants.CHOOSE_BIRDS_TO_REMOVE_EGG + StringUtil.getListAsString(event.getValues(), ", "))
+                        Constants.CHOOSE_BIRDS_TO_REMOVE_EGG + removeEggsFromString)
                 .setComponents()
                 .queue();
 
@@ -113,7 +127,7 @@ public class StringSelectInteractionProcessor {
                             message[1] + "\n\n" + // Choose bird
                             message[2] + "\n\n" + // Choose food
                             Constants.CHOOSE_HABITAT + habitatEnum.getJsonValue() + "\n\n" +
-                            Constants.CHOOSE_BIRDS_TO_REMOVE_EGG + " None";
+                            Constants.CHOOSE_BIRDS_TO_REMOVE_EGG + " " + Constants.NONE;
             takeTurnActionChoicePlayBirdRemoveEggs(event, newMessage, currentGame, currentPlayer);
             return;
         }
@@ -142,13 +156,13 @@ public class StringSelectInteractionProcessor {
 
     private static void takeTurnActionChoiceSelectMenu(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
         try {
-            Action action = Action.valueOf(event.getValues().get(0));
-            switch (action) {
+            BoardAction boardAction = BoardAction.valueOf(event.getValues().get(0));
+            switch (boardAction) {
                 case GAIN_FOOD -> gainFood(event, currentGame, currentPlayer);
                 case LAY_EGGS -> layEggs(event, currentGame, currentPlayer);
                 case PLAY_BIRD -> playBird(event, currentGame, currentPlayer);
                 case DRAW_CARDS -> drawCards(event, currentGame, currentPlayer);
-                default -> logger.warn("Unmapped action: " + action);
+                default -> logger.warn("Unmapped action: " + boardAction);
             }
         } catch (GameInputException ex) {
             event.reply(ex.getMessage()).setEphemeral(true).queue();
@@ -174,7 +188,7 @@ public class StringSelectInteractionProcessor {
                 .addOptions(currentPlayer.getHand().getBirdCards().stream().map(c -> SelectOption.of(c.getName(), c.getName())).toList())
                 .build();
 
-        event.editMessage(Constants.PICK_ACTION + Action.PLAY_BIRD.getLabel() + "\n\n" + Constants.CHOOSE_BIRD_TO_PLAY + "\n\n")
+        event.editMessage(Constants.PICK_ACTION + BoardAction.PLAY_BIRD.getLabel() + "\n\n" + Constants.CHOOSE_BIRD_TO_PLAY + "\n\n")
                 .setComponents(ActionRow.of(pickBirdSubmenu))
                 .queue();
     }
@@ -207,7 +221,7 @@ public class StringSelectInteractionProcessor {
             return;
         }
 
-        event.editMessage(Constants.PICK_ACTION + Action.PLAY_BIRD.getLabel() + "\n\n" +
+        event.editMessage(Constants.PICK_ACTION + BoardAction.PLAY_BIRD.getLabel() + "\n\n" +
                         Constants.CHOOSE_BIRD_TO_PLAY + birdToPlay + "\n\n" +
                         Constants.CHOOSE_FOOD_TO_USE + "\n" +
                         "Food used: " + EmojiEnum.getFoodAsEmojiList(currentPlayer.getHand().getTempPantrySpentFood()) + "\n" +
