@@ -3,6 +3,7 @@ package game.ui.discord.commands;
 import game.components.meta.Action;
 import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.DiscordObject;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -28,7 +29,12 @@ public class TakeTurn implements SlashCommand {
     @Override
     public CommandData getCommandData() {
         return Commands.slash(name, description)
-                .addOption(OptionType.STRING, PARAM_GAME_ID, "The game id", true);
+                .addOption(OptionType.STRING, PARAM_GAME_ID, "The game id", true, true);
+    }
+
+    @Override
+    public void handleAutoComplete(CommandAutoCompleteInteractionEvent event) {
+        SlashCommand.autoCompleteGameId(event);
     }
 
     @Override

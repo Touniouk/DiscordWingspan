@@ -8,6 +8,7 @@ import game.service.DiscordBotService;
 import game.ui.discord.enumeration.EmojiEnum;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -34,8 +35,13 @@ public class SeeBoard implements SlashCommand {
     @Override
     public CommandData getCommandData() {
         return Commands.slash(name, description)
-                .addOption(OptionType.STRING, PARAM_GAME_ID, "The game id", true)
+                .addOption(OptionType.STRING, PARAM_GAME_ID, "The game id", true, true)
                 .addOption(OptionType.USER, PARAM_USER, "The player board to see (yours by default)", false);
+    }
+
+    @Override
+    public void handleAutoComplete(CommandAutoCompleteInteractionEvent event) {
+        SlashCommand.autoCompleteGameId(event);
     }
 
     @Override

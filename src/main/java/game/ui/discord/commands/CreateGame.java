@@ -66,6 +66,10 @@ public class CreateGame implements SlashCommand {
                 .filter(Objects::nonNull)
                 .map(OptionMapping::getAsUser)
                 .toList();
+        if (playerList.stream().anyMatch(User::isBot)) {
+            event.reply("Bots can't play Wingspan!").setEphemeral(true).queue();
+            return;
+        }
         TextChannel gameChannel = Optional
                 .ofNullable(event.getOption(PARAM_CHANNEL))
                 .map(OptionMapping::getAsChannel)
