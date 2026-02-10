@@ -9,8 +9,10 @@ import game.service.DiscordBotService;
 import game.service.GameService;
 import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.DiscordObject;
+import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -56,6 +58,10 @@ public class TakeTurn implements SlashCommand {
             return;
         }
 
+        takeTurn(event, currentGame, currentPlayer);
+    }
+
+    public static void takeTurn(SlashCommandInteractionEvent event, Game currentGame, Player currentPlayer) {
         // Check if we are allowed to take a turn
         if (!GameService.getInstance().isPlayerAllowedAction(currentPlayer, GameAction.TAKE_TURN)) {
             event.reply("It is not your turn, it is currently " + currentGame.getCurrentPlayer().getUser().getName() + "'s turn, please be patient")
@@ -63,7 +69,24 @@ public class TakeTurn implements SlashCommand {
             return;
         }
 
-        StringSelectMenu pickActionMenu = StringSelectMenu.create(DiscordObject.TAKE_TURN_ACTION_CHOICE_SELECT_MENU.name() + ":" + gameId)
+        StringSelectMenu pickActionMenu = StringSelectMenu.create(DiscordObject.TAKE_TURN_ACTION_CHOICE_SELECT_MENU.name() + ":" + currentGame.getGameId())
+                .setPlaceholder("Action")
+                .addOptions(Arrays.stream(BoardAction.values()).map(a -> SelectOption.of(a.getLabel(), a.name())).toList())
+                .build();
+        event.reply("\n" + Constants.PICK_ACTION + "\n\n")
+                .setEphemeral(true)
+                .addActionRow(pickActionMenu)
+                .queue();
+    }
+
+    public static void takeTurn(ButtonInteractionEvent event, Game currentGame, Player currentPlayer) {
+        if (!GameService.getInstance().isPlayerAllowedAction(currentPlayer, GameAction.TAKE_TURN)) {
+            event.reply("It is not your turn, it is currently " + currentGame.getCurrentPlayer().getUser().getName() + "'s turn, please be patient")
+                    .setEphemeral(true).queue();
+            return;
+        }
+
+        StringSelectMenu pickActionMenu = StringSelectMenu.create(DiscordObject.TAKE_TURN_ACTION_CHOICE_SELECT_MENU.name() + ":" + currentGame.getGameId())
                 .setPlaceholder("Action")
                 .addOptions(Arrays.stream(BoardAction.values()).map(a -> SelectOption.of(a.getLabel(), a.name())).toList())
                 .build();

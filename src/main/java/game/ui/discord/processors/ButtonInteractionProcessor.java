@@ -7,6 +7,8 @@ import game.components.subcomponents.*;
 import game.exception.GameInputException;
 import game.service.DiscordBotService;
 import game.service.GameService;
+import game.ui.discord.commands.SeeBoard;
+import game.ui.discord.commands.TakeTurn;
 import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.DiscordObject;
 import game.ui.discord.enumeration.EmojiEnum;
@@ -72,6 +74,8 @@ public class ButtonInteractionProcessor {
                      TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_4 -> toggleGainFoodDie(event, currentGame);
                 case TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_SUBMIT_BUTTON -> submitGainFood(event, currentGame, currentPlayer);
                 case TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_REROLL_BUTTON -> rerollFeeder(event, currentGame, currentPlayer);
+                case PROMPT_TAKE_TURN_BUTTON -> TakeTurn.takeTurn(event, currentGame, currentPlayer);
+                case PROMPT_SEE_BOARD_BUTTON -> SeeBoard.seeBoard(event, currentPlayer);
                 default -> logger.warn("Button id not matched: " + componentId);
             }
         } catch (GameInputException ex) {

@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -62,7 +63,13 @@ public class SeeBoard implements SlashCommand {
                 .queue();
     }
 
-    private EmbedBuilder getBoardEmbed(Player player, boolean showHiddenInfo) {
+    public static void seeBoard(ButtonInteractionEvent event, Player currentPlayer) {
+        event.replyEmbeds(SeeBoard.getBoardEmbed(currentPlayer, true).build())
+                .setEphemeral(true)
+                .queue();
+    }
+
+    public static EmbedBuilder getBoardEmbed(Player player, boolean showHiddenInfo) {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle(StringUtil.replacePlaceholders("**" + player.getUser().getName() + "️'s Board: **"));
         embed.setColor(0x1abc9c);
