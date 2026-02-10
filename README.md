@@ -2,14 +2,18 @@
 
 A Discord bot that lets you play the [Wingspan](https://stonemaiergames.com/games/wingspan/) board game with friends, right inside a Discord server. Create games, draft starting hands, place birds on your board, and compete for the highest score — all through slash commands and interactive buttons.
 
-> **Status:** Early development. Game creation, starting hand drafting, and board display are functional. Core gameplay (turn actions, powers, scoring) is still in progress.
+> **Status:** In development. Game creation, starting hand drafting, board display, and turn actions (Gain Food, Play Bird) are functional. Draw Cards, Lay Eggs, bird powers, scoring, and end-of-round goals are still in progress.
 
 ## Features
 
 - **Create & join games** with 1–5 players
 - **Starting hand draft** — choose which birds and food to keep
 - **Board display** — view any player's 3-habitat board with placed birds
+- **Gain Food** — pick dice from the birdfeeder, with dual-food cycling and reroll support
+- **Play Bird** — select a bird, pay its food cost, and place it in a habitat
 - **Food cost validation** — supports wild food, either/or costs, and 2-for-1 conversions
+- **Bird feeder display** — view dice in and out of the feeder
+- **Turn management** — enforces turn order and advances to the next player
 - **Oceania expansion** support (Nectar board variant)
 
 ### Slash Commands
@@ -17,14 +21,15 @@ A Discord bot that lets you play the [Wingspan](https://stonemaiergames.com/game
 | Command | Description |
 |---------|-------------|
 | `/create_game` | Create a new game and invite players |
-| `/take_turn` | Take your turn (WIP) |
+| `/take_turn` | Take your turn (Gain Food, Play Bird) |
 | `/see_board` | View a player's board |
+| `/see_bird_feeder` | View the birdfeeder dice |
 | `/get_active_games` | List your ongoing games |
 
 ## Tech Stack
 
 - **Java 19**
-- **[JDA 5](https://github.com/discord-jda/JDA)** — Discord API wrapper
+- **[JDA 5](https://github.com/discord-jda/JDA)** — Discord API wrapper ([Wiki](https://jda.wiki/) | [Javadoc](https://ci.dv8tion.net/job/JDA5/javadoc/))
 - **[Jackson](https://github.com/FasterXML/jackson)** — JSON parsing for game data
 - **[Lombok](https://projectlombok.org/)** — boilerplate reduction
 - **[JUnit 5](https://junit.org/junit5/)** — testing

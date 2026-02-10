@@ -128,7 +128,7 @@ public class StringSelectInteractionProcessor {
                             message[2] + "\n\n" + // Choose food
                             Constants.CHOOSE_HABITAT + habitatEnum.getJsonValue() + "\n\n" +
                             Constants.CHOOSE_BIRDS_TO_REMOVE_EGG + " " + Constants.NONE;
-            takeTurnActionChoicePlayBirdRemoveEggs(event, newMessage, currentGame, currentPlayer);
+            takeTurnActionChoicePlayBirdRemoveEggs(event, newMessage, currentGame, currentPlayer, true);
             return;
         }
 
@@ -170,6 +170,11 @@ public class StringSelectInteractionProcessor {
     }
 
     private static void gainFood(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
+        int maxFood = currentPlayer.getBoard().getForest().getNumberOfFoodToGain();
+        ButtonInteractionProcessor.FeedPickerMessage picker = ButtonInteractionProcessor.buildFeedPickerMessage(currentGame, maxFood, "");
+        event.editMessage(picker.content())
+                .setComponents(picker.components())
+                .queue();
     }
 
     private static void layEggs(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
@@ -198,13 +203,13 @@ public class StringSelectInteractionProcessor {
 
         List<ActionRow> components = List.of(
                 ActionRow.of(
-                        Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_WORM.name() + ":" + currentGame.getGameId(), "➕").withEmoji(Emoji.fromFormatted(EmojiEnum.INVERTEBRATE.getEmoteId())),
+                        Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_WORM.name() + ":" + currentGame.getGameId(), "➕").withEmoji(Emoji.fromFormatted(EmojiEnum.WORM.getEmoteId())),
                         Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_SEED.name() + ":" + currentGame.getGameId(), "➕").withEmoji(Emoji.fromFormatted(EmojiEnum.SEED.getEmoteId())),
                         Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_FRUIT.name() + ":" + currentGame.getGameId(), "➕").withEmoji(Emoji.fromFormatted(EmojiEnum.FRUIT.getEmoteId())),
                         Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_FISH.name() + ":" + currentGame.getGameId(), "➕").withEmoji(Emoji.fromFormatted(EmojiEnum.FISH.getEmoteId())),
                         Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_RODENT.name() + ":" + currentGame.getGameId(), "➕").withEmoji(Emoji.fromFormatted(EmojiEnum.RODENT.getEmoteId()))),
                 ActionRow.of(
-                        Button.danger(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_WORM.name() + ":" + currentGame.getGameId(), "➖").withEmoji(Emoji.fromFormatted(EmojiEnum.INVERTEBRATE.getEmoteId())),
+                        Button.danger(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_WORM.name() + ":" + currentGame.getGameId(), "➖").withEmoji(Emoji.fromFormatted(EmojiEnum.WORM.getEmoteId())),
                         Button.danger(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_SEED.name() + ":" + currentGame.getGameId(), "➖").withEmoji(Emoji.fromFormatted(EmojiEnum.SEED.getEmoteId())),
                         Button.danger(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_FRUIT.name() + ":" + currentGame.getGameId(), "➖").withEmoji(Emoji.fromFormatted(EmojiEnum.FRUIT.getEmoteId())),
                         Button.danger(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_FISH.name() + ":" + currentGame.getGameId(), "➖").withEmoji(Emoji.fromFormatted(EmojiEnum.FISH.getEmoteId())),
@@ -242,7 +247,7 @@ public class StringSelectInteractionProcessor {
         EmbedBuilder newEmbedBuilder = new EmbedBuilder(embed);
         newEmbedBuilder.getFields().removeIf(f -> Objects.equals(f.getName(), Constants.FOOD_SELECTED_FIELD));
         MessageEmbed newEmbed = newEmbedBuilder.setDescription(Objects.requireNonNull(embed.getDescription()).replace(Constants.FOOD_NOT_SELECTED, Constants.FOOD_SELECTED))
-                .addField(Constants.FOOD_SELECTED_FIELD, foodSelected.isEmpty() ? "None" : StringUtil.getListAsString(foodSelected.stream().map(FoodType::getJsonName), ", "), true)
+                .addField(Constants.FOOD_SELECTED_FIELD, foodSelected.isEmpty() ? "None" : StringUtil.getListAsString(foodSelected.stream().map(FoodType::getDisplayName), ", "), true)
                 .build();
 
         String buttonId = DiscordObject.PICK_STARTING_HAND_SUBMIT_BUTTON.name() + ":" + currentGame.getGameId();

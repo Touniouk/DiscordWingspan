@@ -1,7 +1,11 @@
 package game.ui.discord.enumeration;
 
 import game.components.enums.FoodType;
+import game.components.subcomponents.DieFace;
+import game.ui.discord.processors.StringSelectInteractionProcessor;
 import lombok.Getter;
+import util.LogLevel;
+import util.Logger;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -12,7 +16,7 @@ import java.util.stream.IntStream;
 public enum EmojiEnum {
     // Food types
     SEED("seed", "<:seed:1394916027992768605>"),
-    INVERTEBRATE("invertebrate", "<:invertebrate:1394915837965504584>"),
+    WORM("invertebrate", "<:invertebrate:1394915837965504584>"),
     FISH("fish", "<:fish:1394915631912190002>"),
     RODENT("rodent", "<:rodent:1394916078689452122>"),
     FRUIT("fruit", "<:fruit:1394915684370088006>"),
@@ -37,6 +41,8 @@ public enum EmojiEnum {
     GRASSLAND("grassland", "<:grassland:1394915762304454689>"),
     FOREST("forest", "<:forest:1394915726741082204>");
 
+    private static final Logger logger = new Logger(EmojiEnum.class, LogLevel.ALL);
+
     private final String placeholder;
     private final String emoteId;
 
@@ -59,6 +65,33 @@ public enum EmojiEnum {
     }
 
     public static EmojiEnum getEmojiFromFoodType(FoodType foodType) {
+        logger.debug("Getting emote for food type " + foodType.name());
         return foodTypeToEmoteMap.get(foodType);
+    }
+
+    public static String getEmoteIdFromFoodType(FoodType foodType) {
+        logger.debug("Getting emote String for food type " + foodType.name());
+        return foodTypeToEmoteMap.get(foodType).getEmoteId();
+    }
+
+    /**
+     * Returns just the first emoji for a die face (e.g. for WORM_SEED returns the worm emoji only).
+     * Useful for button display where only one emoji is allowed.
+     */
+    public static String getFirstEmojiFromDieFace(DieFace dieFace) {
+        return getEmojiFromDieFace(dieFace).split("/")[0];
+    }
+
+    public static String getEmojiFromDieFace(DieFace dieFace) {
+        return switch (dieFace) {
+            case WORM -> WORM.emoteId;
+            case SEED -> SEED.emoteId;
+            case WORM_SEED -> WORM.emoteId + "/" + SEED.emoteId;
+            case FRUIT -> FRUIT.emoteId;
+            case MOUSE -> RODENT.emoteId;
+            case FISH -> FISH.emoteId;
+            case SEED_NECTAR -> SEED.emoteId + "/" + NECTAR.emoteId;
+            case FRUIT_NECTAR -> FRUIT.emoteId + "/" + NECTAR.emoteId;
+        };
     }
 }

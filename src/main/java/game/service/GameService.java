@@ -160,7 +160,6 @@ public class GameService {
     public boolean isPlayerAllowedAction(Player player, GameAction action) {
         return switch (action) {
             case TAKE_TURN -> player.getState() == PlayerState.PLAYING_TURN;
-            default -> false;
         };
     }
 }

@@ -24,11 +24,11 @@ public class Hand {
     public Hand(boolean nectar) {
         this.birdCards = new ArrayList<>();
         this.bonusCards = new ArrayList<>();
-        this.pantry = Stream.of(FoodType.INVERTEBRATE, FoodType.SEED, FoodType.FRUIT, FoodType.RODENT, FoodType.FISH, FoodType.NECTAR)
+        this.pantry = Stream.of(FoodType.WORM, FoodType.SEED, FoodType.FRUIT, FoodType.RODENT, FoodType.FISH, FoodType.NECTAR)
                 .collect(Collectors.toMap(food -> food, food -> 0));
-        this.tempPantrySpentFood = Stream.of(FoodType.INVERTEBRATE, FoodType.SEED, FoodType.FRUIT, FoodType.RODENT, FoodType.FISH, FoodType.NECTAR)
+        this.tempPantrySpentFood = Stream.of(FoodType.WORM, FoodType.SEED, FoodType.FRUIT, FoodType.RODENT, FoodType.FISH, FoodType.NECTAR)
                 .collect(Collectors.toMap(food -> food, food -> 0));
-        this.tempPantryAvailableFood = Stream.of(FoodType.INVERTEBRATE, FoodType.SEED, FoodType.FRUIT, FoodType.RODENT, FoodType.FISH, FoodType.NECTAR)
+        this.tempPantryAvailableFood = Stream.of(FoodType.WORM, FoodType.SEED, FoodType.FRUIT, FoodType.RODENT, FoodType.FISH, FoodType.NECTAR)
                 .collect(Collectors.toMap(food -> food, food -> 0));
     }
 

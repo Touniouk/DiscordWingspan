@@ -15,7 +15,6 @@ import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import util.StringUtil;
 
-import java.util.Objects;
 import java.util.Optional;
 
 public class SeeBoard implements SlashCommand {
@@ -34,7 +33,7 @@ public class SeeBoard implements SlashCommand {
     @Override
     public CommandData getCommandData() {
         return Commands.slash(name, description)
-                .addOption(OptionType.STRING, PARAM_GAME_ID, "The game id", true, true)
+                .addOption(OptionType.STRING, PARAM_GAME_ID, "The game id (defaults to your active game)", false, true)
                 .addOption(OptionType.USER, PARAM_USER, "The player board to see (yours by default)", false);
     }
 
@@ -45,13 +44,14 @@ public class SeeBoard implements SlashCommand {
 
     @Override
     public void handle(SlashCommandInteractionEvent event) {
-        String gameId = Objects.requireNonNull(event.getOption(PARAM_GAME_ID)).getAsString();
         Optional<User> userOptional = Optional.ofNullable(event.getOption(PARAM_USER)).map(OptionMapping::getAsUser);
         User user = userOptional.orElseGet(event::getUser);
         boolean showHiddenInfo = user.getIdLong() == event.getUser().getIdLong();
 
+        String gameId;
         Player currentPlayer;
         try {
+            gameId = SlashCommand.resolveGameId(event, PARAM_GAME_ID);
             currentPlayer = DiscordBotService.getInstance().getPlayerFromGame(event, gameId);
         } catch (GameInputException ex) {
             event.reply(ex.getMessage()).setEphemeral(true).queue();

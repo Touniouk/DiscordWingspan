@@ -18,9 +18,15 @@ public class Board {
     private final Wetland wetland;
 
     public Board() {
-        this.forest = new Forest();
-        this.grassland = new Grassland();
-        this.wetland = new Wetland();
+        this.forest = new Forest(false);
+        this.grassland = new Grassland(false);
+        this.wetland = new Wetland(false);
+    }
+
+    public Board(boolean nectarBoard) {
+        this.forest = new Forest(nectarBoard);
+        this.grassland = new Grassland(nectarBoard);
+        this.wetland = new Wetland(nectarBoard);
     }
 
     public Forest getForest() {

@@ -114,7 +114,7 @@ public class CreateGame implements SlashCommand {
         IntStream.range(0, (int) (Math.random() * 4) + 1).forEach(i -> player.getBoard().getForest().addBird(game.getBirdDeck().drawCard()));
         IntStream.range(0, (int) (Math.random() * 4) + 1).forEach(i -> player.getBoard().getGrassland().addBird(game.getBirdDeck().drawCard()));
         IntStream.range(0, (int) (Math.random() * 4) + 1).forEach(i -> player.getBoard().getWetland().addBird(game.getBirdDeck().drawCard()));
-        List.of(FoodType.INVERTEBRATE, FoodType.SEED, FoodType.FRUIT, FoodType.FISH, FoodType.RODENT, FoodType.NECTAR).forEach(f -> player.getHand().getPantry().put(f, (int) (Math.random() * 5)));
+        List.of(FoodType.WORM, FoodType.SEED, FoodType.FRUIT, FoodType.FISH, FoodType.RODENT, FoodType.NECTAR).forEach(f -> player.getHand().getPantry().put(f, (int) (Math.random() * 5)));
         List<BirdCard> playedBirds = player.getBoard().getPlayedBirds();
         Collections.shuffle(playedBirds);
         playedBirds.subList(0, playedBirds.size()/2).forEach(b -> b.getNest().setNumberOfEggs((int) (Math.random() * 3)));
@@ -172,7 +172,7 @@ public class CreateGame implements SlashCommand {
                 .setMinValues(1)
                 .setMaxValues(5)
                 .addOption("None", "none")
-                .addOptions(FoodType.getStartingHandFoodTypes().stream().map(food -> SelectOption.of(food.getJsonName(), food.name())).toList())
+                .addOptions(FoodType.getStartingHandFoodTypes().stream().map(food -> SelectOption.of(food.getDisplayName(), food.name())).toList())
                 .build();
     }
 
