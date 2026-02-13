@@ -77,7 +77,7 @@ public class CreateGame implements SlashCommand {
         Game game = GameService.getInstance().createGame(gameChannel, playerList);
         String gameId = game.getGameId();
 
-        if (!testData) {
+        if (testData) {
             game.getPlayers().forEach(player -> addTestData(game, player));
         }
 

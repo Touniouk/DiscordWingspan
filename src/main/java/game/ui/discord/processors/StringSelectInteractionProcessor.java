@@ -143,7 +143,6 @@ public class StringSelectInteractionProcessor {
                         Constants.CHOOSE_BIRDS_TO_REMOVE_EGG)
                 .setComponents(ActionRow.of(selectMenu))
                 .queue();
-        // TODO: we cannot test since we cannot lay eggs rn
     }
 
     private static void takeTurnActionChoiceSelectMenu(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
@@ -207,22 +206,6 @@ public class StringSelectInteractionProcessor {
     private static void takeTurnActionChoicePlayBirdSelectBirdSubMenu(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
         currentPlayer.getHand().resetTempPantry();
 
-        List<ActionRow> components = List.of(
-                ActionRow.of(
-                        Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_WORM.name() + ":" + currentGame.getGameId(), "➕").withEmoji(Emoji.fromFormatted(EmojiEnum.WORM.getEmoteId())),
-                        Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_SEED.name() + ":" + currentGame.getGameId(), "➕").withEmoji(Emoji.fromFormatted(EmojiEnum.SEED.getEmoteId())),
-                        Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_FRUIT.name() + ":" + currentGame.getGameId(), "➕").withEmoji(Emoji.fromFormatted(EmojiEnum.FRUIT.getEmoteId())),
-                        Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_FISH.name() + ":" + currentGame.getGameId(), "➕").withEmoji(Emoji.fromFormatted(EmojiEnum.FISH.getEmoteId())),
-                        Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_RODENT.name() + ":" + currentGame.getGameId(), "➕").withEmoji(Emoji.fromFormatted(EmojiEnum.RODENT.getEmoteId()))),
-                ActionRow.of(
-                        Button.danger(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_WORM.name() + ":" + currentGame.getGameId(), "➖").withEmoji(Emoji.fromFormatted(EmojiEnum.WORM.getEmoteId())),
-                        Button.danger(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_SEED.name() + ":" + currentGame.getGameId(), "➖").withEmoji(Emoji.fromFormatted(EmojiEnum.SEED.getEmoteId())),
-                        Button.danger(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_FRUIT.name() + ":" + currentGame.getGameId(), "➖").withEmoji(Emoji.fromFormatted(EmojiEnum.FRUIT.getEmoteId())),
-                        Button.danger(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_FISH.name() + ":" + currentGame.getGameId(), "➖").withEmoji(Emoji.fromFormatted(EmojiEnum.FISH.getEmoteId())),
-                        Button.danger(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_RODENT.name() + ":" + currentGame.getGameId(), "➖").withEmoji(Emoji.fromFormatted(EmojiEnum.RODENT.getEmoteId()))),
-                ActionRow.of(Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_SUBMIT_BUTTON.name() + ":" + currentGame.getGameId(), Constants.SUBMIT_SELECTION))
-        );
-
         String birdToPlay;
         try {
             birdToPlay = event.getValues().stream().findFirst().orElseThrow(() -> new GameInputException("No bird selected"));
@@ -232,13 +215,36 @@ public class StringSelectInteractionProcessor {
             return;
         }
 
+        List<ActionRow> components = getChooseFoodSelector(currentGame, currentPlayer);
+
         event.editMessage(Constants.PICK_ACTION + BoardAction.PLAY_BIRD.getLabel() + "\n\n" +
                         Constants.CHOOSE_BIRD_TO_PLAY + birdToPlay + "\n\n" +
                         Constants.CHOOSE_FOOD_TO_USE + "\n" +
                         "Food used: " + EmojiEnum.getFoodAsEmojiList(currentPlayer.getHand().getTempPantrySpentFood()) + "\n" +
-                        "Food in hand: " + EmojiEnum.getFoodAsEmojiList(currentPlayer.getHand().getPantry()))
+                        "Food in hand: " + EmojiEnum.getFoodAsEmojiList(currentPlayer.getHand().getTempPantryAvailableFood()))
                 .setComponents(components)
                 .queue();
+    }
+
+    public static List<ActionRow> getChooseFoodSelector(Game currentGame, Player currentPlayer) {
+        List<Button> addFoodButtons = new ArrayList<>();
+        List<Button> removeFoodButtons = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            Button addFoodButton = Button.primary(DiscordObject.ADD_FOOD_IDS[i].name() + ":" + currentGame.getGameId(), "➕")
+                    .withEmoji(Emoji.fromFormatted(FoodType.values()[i].getEmoji().getEmoteId()))
+                    .withDisabled(currentPlayer.getHand().getTempPantryAvailableFood().get(FoodType.values()[i]) == 0);
+            Button removeFoodButton = Button.danger(DiscordObject.REMOVE_FOOD_IDS[i].name() + ":" + currentGame.getGameId(), "➖")
+                    .withEmoji(Emoji.fromFormatted(FoodType.values()[i].getEmoji().getEmoteId()))
+                    .withDisabled(currentPlayer.getHand().getTempPantrySpentFood().get(FoodType.values()[i]) == 0);
+            addFoodButtons.add(addFoodButton);
+            removeFoodButtons.add(removeFoodButton);
+        }
+
+        return List.of(
+                ActionRow.of(addFoodButtons),
+                ActionRow.of(removeFoodButtons),
+                ActionRow.of(Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_SUBMIT_BUTTON.name() + ":" + currentGame.getGameId(), Constants.SUBMIT_SELECTION))
+        );
     }
 
     private static void pickStartingHandFoodSelectMenu(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {

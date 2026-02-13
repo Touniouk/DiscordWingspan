@@ -1,6 +1,6 @@
 package game.components.enums;
 
-import game.ui.discord.processors.StringSelectInteractionProcessor;
+import game.ui.discord.enumeration.EmojiEnum;
 import lombok.Getter;
 import util.LogLevel;
 import util.Logger;
@@ -11,13 +11,13 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public enum FoodType {
-    WORM("Invertebrate", "Worm"),
-    SEED("Seed", "Seed"),
-    FRUIT("Fruit", "Fruit"),
-    FISH("Fish", "Fish"),
-    RODENT("Rodent", "Rodent"),
-    NECTAR("Nectar", "Nectar"),
-    WILD("Wild (food)", "Wild");
+    WORM("Invertebrate", "Worm", EmojiEnum.WORM),
+    SEED("Seed", "Seed", EmojiEnum.SEED),
+    FRUIT("Fruit", "Fruit", EmojiEnum.FRUIT),
+    FISH("Fish", "Fish", EmojiEnum.FISH),
+    RODENT("Rodent", "Rodent", EmojiEnum.RODENT),
+    NECTAR("Nectar", "Nectar", EmojiEnum.NECTAR),
+    WILD("Wild (food)", "Wild", EmojiEnum.WILD);
 
     private static final Logger logger = new Logger(FoodType.class, LogLevel.ALL);
 
@@ -25,14 +25,23 @@ public enum FoodType {
     private final String jsonName;
     @Getter
     private final String displayName;
-    private static final Map<String, FoodType> jsonNameMap = Arrays.stream(FoodType.values())
-            .collect(Collectors.toMap(e -> e.jsonName, e -> e));
-    private static final Map<String, FoodType> displayNameMap = Arrays.stream(FoodType.values())
-            .collect(Collectors.toMap(e -> e.displayName, e -> e));
+    @Getter
+    private final EmojiEnum emoji;
 
-    FoodType(String jsonName, String displayName) {
+    private static final Map<String, FoodType> jsonNameMap;
+    private static final Map<String, FoodType> displayNameMap;
+
+    static {
+        jsonNameMap = Arrays.stream(FoodType.values())
+                .collect(Collectors.toMap(e -> e.jsonName, e -> e));
+        displayNameMap = Arrays.stream(FoodType.values())
+                .collect(Collectors.toMap(e -> e.displayName, e -> e));
+    }
+
+    FoodType(String jsonName, String displayName, EmojiEnum emoji) {
         this.jsonName = jsonName;
         this.displayName = displayName;
+        this.emoji = emoji;
     }
 
     public static FoodType fromJsonName(String jsonName) {

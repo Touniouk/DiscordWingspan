@@ -58,8 +58,11 @@ public enum EmojiEnum {
     private final String placeholder;
     private final String emoteId;
 
-    private final static Map<String, String> placeholderToEmoteMap = Arrays.stream(EmojiEnum.values()).collect(Collectors.toMap(e -> e.placeholder, e -> e.emoteId));
-    private static final Map<FoodType, EmojiEnum> foodTypeToEmoteMap = Arrays.stream(FoodType.values()).collect(Collectors.toMap(e -> e, e -> EmojiEnum.valueOf(e.name())));
+    private static final Map<String, String> placeholderToEmoteMap;
+
+    static {
+        placeholderToEmoteMap = Arrays.stream(EmojiEnum.values()).collect(Collectors.toMap(e -> e.placeholder, e -> e.emoteId));
+    }
 
     EmojiEnum(String placeholder, String emoteId) {
         this.placeholder = placeholder;
@@ -72,18 +75,8 @@ public enum EmojiEnum {
 
     public static String getFoodAsEmojiList(Map<FoodType, Integer> pantry) {
         StringBuilder builder = new StringBuilder();
-        pantry.forEach((k, v) -> IntStream.range(0, v).forEach(i -> builder.append(getEmojiFromFoodType(k).getEmoteId()).append(", ")));
+        pantry.forEach((k, v) -> IntStream.range(0, v).forEach(i -> builder.append(k.getEmoji().getEmoteId()).append(", ")));
         return builder.length() > 1 ? builder.substring(0, builder.length() - 2) : builder.toString();
-    }
-
-    public static EmojiEnum getEmojiFromFoodType(FoodType foodType) {
-        logger.debug("Getting emote for food type " + foodType.name());
-        return foodTypeToEmoteMap.get(foodType);
-    }
-
-    public static String getEmoteIdFromFoodType(FoodType foodType) {
-        logger.debug("Getting emote String for food type " + foodType.name());
-        return foodTypeToEmoteMap.get(foodType).getEmoteId();
     }
 
     /**

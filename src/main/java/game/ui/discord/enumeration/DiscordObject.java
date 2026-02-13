@@ -1,5 +1,7 @@
 package game.ui.discord.enumeration;
 
+import game.components.enums.FoodType;
+
 public enum DiscordObject {
     PICK_STARTING_HAND_BIRD_SELECT_MENU,
     PICK_STARTING_HAND_BONUS_SELECT_MENU,
@@ -48,5 +50,53 @@ public enum DiscordObject {
     TAKE_TURN_ACTION_CHOICE_LAY_EGGS_SUBMIT_BUTTON,
     PROMPT_PICK_HAND_BUTTON,
     PROMPT_TAKE_TURN_BUTTON,
-    PROMPT_SEE_BOARD_BUTTON
+    PROMPT_SEE_BOARD_BUTTON;
+
+
+
+    public static final DiscordObject[] ADD_FOOD_IDS = {
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_WORM,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_SEED,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_FRUIT,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_FISH,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_RODENT
+    };
+
+    public static final DiscordObject[] REMOVE_FOOD_IDS = {
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_WORM,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_SEED,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_FRUIT,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_FISH,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_RODENT
+    };
+
+    public static final DiscordObject[] LAY_EGGS_ADD_IDS = {
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_ADD_BIRD_0,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_ADD_BIRD_1,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_ADD_BIRD_2,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_ADD_BIRD_3,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_ADD_BIRD_4
+    };
+
+    public static final DiscordObject[] LAY_EGGS_REMOVE_IDS = {
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_0,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_1,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_2,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_3,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_4
+    };
+
+    public static final DiscordObject[] LAY_EGGS_HABITAT_IDS = {
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_HABITAT_FOREST,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_HABITAT_GRASSLAND,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_HABITAT_WETLAND
+    };
+
+    public static final DiscordObject[] GAIN_FOOD_DIE_IDS = {
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_0,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_1,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_2,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_3,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_4
+    };
 }
