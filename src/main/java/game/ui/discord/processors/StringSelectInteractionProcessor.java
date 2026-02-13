@@ -31,6 +31,7 @@ import util.StringUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class StringSelectInteractionProcessor {
@@ -39,28 +40,19 @@ public class StringSelectInteractionProcessor {
 
     public static void handleCommand(StringSelectInteractionEvent event) {
         logSelected(event);
-        String[] arr = event.getComponentId().split(":");
-        String componentId = arr[0];
-        String gameId = arr[1];
-        Game currentGame;
-        Player currentPlayer;
-        try {
-            currentGame = DiscordBotService.getInstance().getGameFromId(event, gameId);
-            currentPlayer = currentGame.getPlayerById(event.getUser().getIdLong());
-        } catch (GameInputException ex) {
-            event.reply(ex.getMessage()).setEphemeral(true).queue();
-            return;
-        }
+        Optional<DiscordBotService.GameContext> gameContextOptional = DiscordBotService.resolveGameContext(event);
+        if (gameContextOptional.isEmpty()) return;
+        DiscordBotService.GameContext gameContext = gameContextOptional.get();
 
-        switch (DiscordObject.valueOf(componentId)) {
-            case PICK_STARTING_HAND_BIRD_SELECT_MENU -> pickStartingHandBirdSelectMenu(event, currentGame, currentPlayer);
-            case PICK_STARTING_HAND_BONUS_SELECT_MENU -> pickStartingHandBonusSelectMenu(event, currentGame, currentPlayer);
-            case PICK_STARTING_HAND_FOOD_SELECT_MENU -> pickStartingHandFoodSelectMenu(event, currentGame, currentPlayer);
-            case TAKE_TURN_ACTION_CHOICE_SELECT_MENU -> takeTurnActionChoiceSelectMenu(event, currentGame, currentPlayer);
-            case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_SELECT_BIRD_SUB_MENU -> takeTurnActionChoicePlayBirdSelectBirdSubMenu(event, currentGame, currentPlayer);
-            case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_PICK_HABITAT -> takeTurnActionChoicePlayBirdPickHabitat(event, currentGame, currentPlayer);
-            case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_REMOVE_EGGS -> takeTurnActionChoicePlayBirdRemoveEggs(event, currentGame, currentPlayer);
-            default -> logger.warn("Unmapped component: " + componentId);
+        switch (DiscordObject.valueOf(gameContext.componentId())) {
+            case PICK_STARTING_HAND_BIRD_SELECT_MENU -> pickStartingHandBirdSelectMenu(event, gameContext.game(), gameContext.player());
+            case PICK_STARTING_HAND_BONUS_SELECT_MENU -> pickStartingHandBonusSelectMenu(event, gameContext.game(), gameContext.player());
+            case PICK_STARTING_HAND_FOOD_SELECT_MENU -> pickStartingHandFoodSelectMenu(event, gameContext.game(), gameContext.player());
+            case TAKE_TURN_ACTION_CHOICE_SELECT_MENU -> takeTurnActionChoiceSelectMenu(event, gameContext.game(), gameContext.player());
+            case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_SELECT_BIRD_SUB_MENU -> takeTurnActionChoicePlayBirdSelectBirdSubMenu(event, gameContext.game(), gameContext.player());
+            case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_PICK_HABITAT -> takeTurnActionChoicePlayBirdPickHabitat(event, gameContext.game(), gameContext.player());
+            case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_REMOVE_EGGS -> takeTurnActionChoicePlayBirdRemoveEggs(event, gameContext.game(), gameContext.player());
+            default -> logger.warn("Unmapped component: " + gameContext.componentId());
         }
     }
 
@@ -178,9 +170,23 @@ public class StringSelectInteractionProcessor {
     }
 
     private static void layEggs(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
+        List<BirdCard> allBirds = currentPlayer.getBoard().getPlayedBirds();
+        if (allBirds.isEmpty()) {
+            event.reply("You don't have any birds to lay eggs on").setEphemeral(true).queue();
+            return;
+        }
+
+        currentPlayer.getHand().resetTempEggs();
+        int maxEggs = currentPlayer.getBoard().getGrassland().getNumberOfEggsToLay();
+
+        ButtonInteractionProcessor.LayEggsMessage msg = ButtonInteractionProcessor.buildLayEggsHabitatMessage(currentGame, currentPlayer, maxEggs);
+        event.editMessage(msg.content())
+                .setComponents(msg.components())
+                .queue();
     }
 
     private static void drawCards(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
+        // TODO
     }
 
     private static void playBird(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) throws GameInputException {

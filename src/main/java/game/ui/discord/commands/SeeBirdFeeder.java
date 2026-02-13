@@ -1,6 +1,7 @@
 package game.ui.discord.commands;
 
 import game.components.Feeder;
+import game.service.DiscordBotService;
 import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.EmojiEnum;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -39,9 +40,9 @@ public class SeeBirdFeeder implements SlashCommand {
 
     @Override
     public void handle(SlashCommandInteractionEvent event) {
-        Optional<GameContext> gameContextOptional = SlashCommand.resolveGameContext(event);
+        Optional<DiscordBotService.GameContext> gameContextOptional = DiscordBotService.resolveGameContext(event);
         if (gameContextOptional.isEmpty()) return;
-        GameContext gameContext = gameContextOptional.get();
+        DiscordBotService.GameContext gameContext = gameContextOptional.get();
 
         event.replyEmbeds(getFeederEmbed(gameContext.game().getFeeder()).build())
                 .setEphemeral(true)

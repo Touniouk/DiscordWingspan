@@ -4,6 +4,7 @@ import game.Game;
 import game.Player;
 import game.components.meta.BoardAction;
 import game.components.meta.GameAction;
+import game.service.DiscordBotService;
 import game.service.GameService;
 import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.DiscordObject;
@@ -44,9 +45,9 @@ public class TakeTurn implements SlashCommand {
 
     @Override
     public void handle(SlashCommandInteractionEvent event) {
-        Optional<GameContext> gameContextOptional = SlashCommand.resolveGameContext(event);
+        Optional<DiscordBotService.GameContext> gameContextOptional = DiscordBotService.resolveGameContext(event);
         if (gameContextOptional.isEmpty()) return;
-        GameContext gameContext = gameContextOptional.get();
+        DiscordBotService.GameContext gameContext = gameContextOptional.get();
 
         takeTurn(event, gameContext.game(), gameContext.player());
     }

@@ -3,6 +3,9 @@ package game.ui.discord.processors;
 import game.Game;
 import game.Player;
 import game.components.enums.FoodType;
+import game.components.enums.HabitatEnum;
+import game.components.meta.BoardAction;
+import game.components.meta.Habitat;
 import game.components.subcomponents.*;
 import game.exception.GameInputException;
 import game.service.DiscordBotService;
@@ -37,53 +40,61 @@ public class ButtonInteractionProcessor {
     private static final Logger logger = new Logger(ButtonInteractionProcessor.class, LogLevel.ALL);
 
     public static void handleCommand(ButtonInteractionEvent event) {
-        String[] arr = event.getComponentId().split(":");
-        String componentId = arr[0];
-        String gameId = arr[1];
+        Optional<DiscordBotService.GameContext> gameContextOptional = DiscordBotService.resolveGameContext(event);
+        if (gameContextOptional.isEmpty()) return;
+        DiscordBotService.GameContext gameContext = gameContextOptional.get();
         long userId = event.getUser().getIdLong();
-        Game currentGame;
-        Player currentPlayer;
-        try {
-            currentGame = DiscordBotService.getInstance().getGameFromId(event, gameId);
-            currentPlayer = currentGame.getPlayerById(event.getUser().getIdLong());
-        } catch (GameInputException ex) {
-            event.reply(ex.getMessage()).setEphemeral(true).queue();
-            return;
-        }
 
         try {
-            switch (DiscordObject.valueOf(componentId)) {
-                case PROMPT_PICK_HAND_BUTTON -> PickStartingHand.sendStartingHand(event, currentGame, currentPlayer);
-                case PROMPT_TAKE_TURN_BUTTON -> TakeTurn.takeTurn(event, currentGame, currentPlayer);
-                case PROMPT_SEE_BOARD_BUTTON -> SeeBoard.seeBoard(event, currentPlayer);
-                case PICK_STARTING_HAND_SUBMIT_BUTTON -> pickStartingHandSubmitButton(event, currentGame, userId);
-                case PICK_STARTING_HAND_RANDOMISE_BUTTON -> pickStartingHandRandomiseButton(event, currentGame, currentPlayer);
-                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_WORM -> takeTurnActionChoicePlayBirdChooseFoodAddFood(event, FoodType.WORM, currentPlayer);
-                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_WORM -> takeTurnActionChoicePlayBirdChooseFoodRemoveFood(event, FoodType.WORM, currentPlayer);
-                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_SEED -> takeTurnActionChoicePlayBirdChooseFoodAddFood(event, FoodType.SEED, currentPlayer);
-                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_SEED -> takeTurnActionChoicePlayBirdChooseFoodRemoveFood(event, FoodType.SEED, currentPlayer);
-                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_FRUIT -> takeTurnActionChoicePlayBirdChooseFoodAddFood(event, FoodType.FRUIT, currentPlayer);
-                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_FRUIT -> takeTurnActionChoicePlayBirdChooseFoodRemoveFood(event, FoodType.FRUIT, currentPlayer);
-                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_FISH -> takeTurnActionChoicePlayBirdChooseFoodAddFood(event, FoodType.FISH, currentPlayer);
-                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_FISH -> takeTurnActionChoicePlayBirdChooseFoodRemoveFood(event, FoodType.FISH, currentPlayer);
-                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_RODENT -> takeTurnActionChoicePlayBirdChooseFoodAddFood(event, FoodType.RODENT, currentPlayer);
-                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_RODENT -> takeTurnActionChoicePlayBirdChooseFoodRemoveFood(event, FoodType.RODENT, currentPlayer);
-                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_NECTAR -> takeTurnActionChoicePlayBirdChooseFoodAddFood(event, FoodType.NECTAR, currentPlayer);
-                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_NECTAR -> takeTurnActionChoicePlayBirdChooseFoodRemoveFood(event, FoodType.NECTAR, currentPlayer);
-                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_SUBMIT_BUTTON -> takeTurnActionChoicePlayBirdChooseFoodSubmitButton(event, gameId, currentPlayer);
+            switch (DiscordObject.valueOf(gameContext.componentId())) {
+                case PROMPT_PICK_HAND_BUTTON -> PickStartingHand.sendStartingHand(event, gameContext.game(), gameContext.player());
+                case PROMPT_TAKE_TURN_BUTTON -> TakeTurn.takeTurn(event, gameContext.game(), gameContext.player());
+                case PROMPT_SEE_BOARD_BUTTON -> SeeBoard.seeBoard(event, gameContext.player());
+                case PICK_STARTING_HAND_SUBMIT_BUTTON -> pickStartingHandSubmitButton(event, gameContext.game(), userId);
+                case PICK_STARTING_HAND_RANDOMISE_BUTTON -> pickStartingHandRandomiseButton(event, gameContext.game(), gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_WORM -> takeTurnActionChoicePlayBirdChooseFoodAddFood(event, FoodType.WORM, gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_WORM -> takeTurnActionChoicePlayBirdChooseFoodRemoveFood(event, FoodType.WORM, gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_SEED -> takeTurnActionChoicePlayBirdChooseFoodAddFood(event, FoodType.SEED, gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_SEED -> takeTurnActionChoicePlayBirdChooseFoodRemoveFood(event, FoodType.SEED, gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_FRUIT -> takeTurnActionChoicePlayBirdChooseFoodAddFood(event, FoodType.FRUIT, gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_FRUIT -> takeTurnActionChoicePlayBirdChooseFoodRemoveFood(event, FoodType.FRUIT, gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_FISH -> takeTurnActionChoicePlayBirdChooseFoodAddFood(event, FoodType.FISH, gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_FISH -> takeTurnActionChoicePlayBirdChooseFoodRemoveFood(event, FoodType.FISH, gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_RODENT -> takeTurnActionChoicePlayBirdChooseFoodAddFood(event, FoodType.RODENT, gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_RODENT -> takeTurnActionChoicePlayBirdChooseFoodRemoveFood(event, FoodType.RODENT, gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_NECTAR -> takeTurnActionChoicePlayBirdChooseFoodAddFood(event, FoodType.NECTAR, gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_NECTAR -> takeTurnActionChoicePlayBirdChooseFoodRemoveFood(event, FoodType.NECTAR, gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_SUBMIT_BUTTON -> takeTurnActionChoicePlayBirdChooseFoodSubmitButton(event, gameContext.gameId(), gameContext.player());
                 case TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_0,
                      TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_1,
                      TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_2,
                      TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_3,
-                     TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_4 -> toggleGainFoodDie(event, currentGame);
-                case TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_SUBMIT_BUTTON -> submitGainFood(event, currentGame, currentPlayer);
-                case TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_REROLL_BUTTON -> rerollFeeder(event, currentGame, currentPlayer);
-                default -> logger.warn("Button id not matched: " + componentId);
+                     TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_4 -> toggleGainFoodDie(event, gameContext.game());
+                case TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_SUBMIT_BUTTON -> submitGainFood(event, gameContext.game(), gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_REROLL_BUTTON -> rerollFeeder(event, gameContext.game(), gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_LAY_EGGS_HABITAT_FOREST -> showLayEggsBirdsForHabitat(event, gameContext.game(), gameContext.player(), HabitatEnum.FOREST);
+                case TAKE_TURN_ACTION_CHOICE_LAY_EGGS_HABITAT_GRASSLAND -> showLayEggsBirdsForHabitat(event, gameContext.game(), gameContext.player(), HabitatEnum.GRASSLAND);
+                case TAKE_TURN_ACTION_CHOICE_LAY_EGGS_HABITAT_WETLAND -> showLayEggsBirdsForHabitat(event, gameContext.game(), gameContext.player(), HabitatEnum.WETLAND);
+                case TAKE_TURN_ACTION_CHOICE_LAY_EGGS_ADD_BIRD_0,
+                     TAKE_TURN_ACTION_CHOICE_LAY_EGGS_ADD_BIRD_1,
+                     TAKE_TURN_ACTION_CHOICE_LAY_EGGS_ADD_BIRD_2,
+                     TAKE_TURN_ACTION_CHOICE_LAY_EGGS_ADD_BIRD_3,
+                     TAKE_TURN_ACTION_CHOICE_LAY_EGGS_ADD_BIRD_4 -> layEggsAddBird(event, gameContext.game(), gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_0,
+                     TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_1,
+                     TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_2,
+                     TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_3,
+                     TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_4 -> layEggsRemoveBird(event, gameContext.game(), gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_LAY_EGGS_BACK_BUTTON -> layEggsBackToHabitat(event, gameContext.game(), gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_LAY_EGGS_SUBMIT_BUTTON -> submitLayEggs(event, gameContext.game(), gameContext.player());
+                default -> logger.warn("Button id not matched: " + gameContext.componentId());
             }
         } catch (GameInputException ex) {
             event.reply(ex.getMessage()).setEphemeral(true).queue();
         }
     }
+
+    // ======================== PLAY BIRD ========================
 
     private static void takeTurnActionChoicePlayBirdChooseFoodSubmitButton(ButtonInteractionEvent event, String gameId, Player currentPlayer) {
         // Check that we have the selected food
@@ -235,6 +246,8 @@ public class ButtonInteractionProcessor {
         ).queue();
         GameService.getInstance().checkAllPlayersReady(currentGame);
     }
+
+    // ======================== GAIN FOOD ========================
 
     private static int parseMaxFoodFromMessage(String content) {
         Matcher matcher = Pattern.compile("Pick up to \\*\\*(\\d+)\\*\\* food").matcher(content);
@@ -417,25 +430,6 @@ public class ButtonInteractionProcessor {
             DiscordObject.TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_4
     };
 
-    private static List<Integer> getSelectedDice(ButtonInteractionEvent event) {
-        ActionRow dieRow = event.getMessage().getActionRows().get(0);
-
-        // Find which die indices are selected (SUCCESS style)
-        List<Integer> selectedIndices = new ArrayList<>();
-        for (ItemComponent component : dieRow.getComponents()) {
-            if (component instanceof Button button && button.getStyle() == ButtonStyle.SUCCESS) {
-                String buttonComponentId = Objects.requireNonNull(button.getId()).split(":")[0];
-                for (int i = 0; i < GAIN_FOOD_DIE_IDS.length; i++) {
-                    if (GAIN_FOOD_DIE_IDS[i].name().equals(buttonComponentId)) {
-                        selectedIndices.add(i);
-                        break;
-                    }
-                }
-            }
-        }
-        return selectedIndices;
-    }
-
     /**
      * Inspects the die buttons in the message to determine which dice the player selected
      * and which food type they chose for each (relevant for dual-food dice).
@@ -544,5 +538,242 @@ public class ButtonInteractionProcessor {
         event.editMessage(picker.content())
                 .setComponents(picker.components())
                 .queue();
+    }
+
+    // ======================== LAY EGGS ========================
+
+    private static final DiscordObject[] LAY_EGGS_ADD_IDS = {
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_ADD_BIRD_0,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_ADD_BIRD_1,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_ADD_BIRD_2,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_ADD_BIRD_3,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_ADD_BIRD_4
+    };
+
+    private static final DiscordObject[] LAY_EGGS_REMOVE_IDS = {
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_0,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_1,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_2,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_3,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_4
+    };
+
+    private static final DiscordObject[] LAY_EGGS_HABITAT_IDS = {
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_HABITAT_FOREST,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_HABITAT_GRASSLAND,
+            DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_HABITAT_WETLAND
+    };
+
+    record LayEggsMessage(String content, List<ActionRow> components) {}
+
+    static LayEggsMessage buildLayEggsHabitatMessage(Game game, Player player, int maxEggs) {
+        String gameId = game.getGameId();
+        int eggsRemaining = maxEggs - player.getHand().getTotalTempEggs();
+
+        StringBuilder content = new StringBuilder();
+        content.append(Constants.PICK_ACTION).append(BoardAction.LAY_EGGS.getLabel()).append("\n\n");
+        content.append(Constants.CHOOSE_EGGS_TO_LAY + "Lay up to **").append(maxEggs).append("** on your birds\n");
+        content.append(Constants.LAY_EGGS_REMAINING).append(eggsRemaining).append("\n\n");
+
+        HabitatEnum[] habitats = { HabitatEnum.FOREST, HabitatEnum.GRASSLAND, HabitatEnum.WETLAND };
+        boolean[] habitatHasRoom = new boolean[3];
+
+        // Create the habitat display
+        for (int h = 0; h < habitats.length; h++) {
+            Habitat habitat = player.getBoard().getHabitat(habitats[h]);
+            List<BirdCard> birds = habitat.getBirds();
+            content.append(habitats[h].getEmoji().getEmoteId()).append(" ").append(habitats[h].getJsonValue()).append(": ");
+            if (birds.isEmpty()) {
+                content.append("(empty)");
+            } else {
+                List<String> birdsInHabitat = new ArrayList<>();
+                for (BirdCard bird : birds) {
+                    int currentEggsOnBird = bird.getNest().getNumberOfEggs() + player.getHand().getTempEggsForBird(bird);
+                    int cap = bird.getNest().getCapacity();
+                    birdsInHabitat.add(bird.getName() + " (" + currentEggsOnBird + "/" + cap + " " + EmojiEnum.EGG.getEmoteId() + ")");
+                    if (currentEggsOnBird < cap) habitatHasRoom[h] = true;
+                }
+                content.append(String.join(", ", birdsInHabitat));
+            }
+            content.append("\n");
+        }
+
+        // Create the habitat buttons
+        List<Button> habitatButtons = new ArrayList<>();
+        for (int h = 0; h < habitats.length; h++) {
+            Habitat habitat = player.getBoard().getHabitat(habitats[h]);
+            Button btn = Button.primary(LAY_EGGS_HABITAT_IDS[h].name() + ":" + gameId, habitats[h].getJsonValue())
+                    .withEmoji(Emoji.fromFormatted(habitats[h].getEmoji().getEmoteId()));
+            if (habitat.getBirds().isEmpty() || !habitatHasRoom[h] || eggsRemaining <= 0) {
+                btn = btn.asDisabled();
+            }
+            habitatButtons.add(btn);
+        }
+
+        Button submitButton = Button.success(DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_SUBMIT_BUTTON.name() + ":" + gameId, Constants.SUBMIT_SELECTION);
+
+        List<ActionRow> rows = new ArrayList<>();
+        rows.add(ActionRow.of(habitatButtons));
+        rows.add(ActionRow.of(submitButton));
+
+        return new LayEggsMessage(content.toString(), rows);
+    }
+
+    private static int parseMaxEggsFromMessage(String content) {
+        Matcher matcher = Pattern.compile("Lay up to \\*\\*(\\d+)\\*\\* eggs").matcher(content);
+        return matcher.find() ? Integer.parseInt(matcher.group(1)) : 2;
+    }
+
+    private static HabitatEnum parseCurrentHabitatFromMessage(String content) {
+        // Look for the habitat header line like "🌲 Forest birds:"
+        if (content.contains("Forest birds:")) return HabitatEnum.FOREST;
+        if (content.contains("Grassland birds:")) return HabitatEnum.GRASSLAND;
+        if (content.contains("Wetland birds:")) return HabitatEnum.WETLAND;
+        return null;
+    }
+
+    private static void showLayEggsBirdsForHabitat(ButtonInteractionEvent event, Game game, Player player, HabitatEnum habitatEnum) {
+        int maxEggs = parseMaxEggsFromMessage(event.getMessage().getContentRaw());
+        LayEggsMessage msg = buildLayEggsBirdMessage(game, player, habitatEnum, maxEggs);
+        event.editMessage(msg.content())
+                .setComponents(msg.components())
+                .queue();
+    }
+
+    private static LayEggsMessage buildLayEggsBirdMessage(Game game, Player player, HabitatEnum habitatEnum, int maxEggs) {
+        String gameId = game.getGameId();
+        Habitat habitat = player.getBoard().getHabitat(habitatEnum);
+        List<BirdCard> birds = habitat.getBirds();
+        int eggsRemaining = maxEggs - player.getHand().getTotalTempEggs();
+
+        StringBuilder content = new StringBuilder();
+        content.append(Constants.PICK_ACTION).append(BoardAction.LAY_EGGS.getLabel()).append("\n\n");
+        content.append(Constants.CHOOSE_EGGS_TO_LAY).append(maxEggs).append("** eggs on your birds\n");
+        content.append(Constants.LAY_EGGS_REMAINING).append(eggsRemaining).append("\n\n");
+        content.append(habitatEnum.getEmoji().getEmoteId()).append(" ").append(habitatEnum.getJsonValue()).append(" birds:\n");
+
+        List<String> birdsInHabitat = new ArrayList<>();
+        for (BirdCard bird : birds) {
+            int current = bird.getNest().getNumberOfEggs() + player.getHand().getTempEggsForBird(bird);
+            int cap = bird.getNest().getCapacity();
+            birdsInHabitat.add(bird.getName() + " (" + current + "/" + cap + " " + EmojiEnum.EGG.getEmoteId() + ")");
+        }
+        content.append(String.join(" | ", birdsInHabitat));
+
+        // Build add buttons row
+        List<Button> addButtons = new ArrayList<>();
+        for (int i = 0; i < birds.size(); i++) {
+            BirdCard bird = birds.get(i);
+            int current = bird.getNest().getNumberOfEggs() + player.getHand().getTempEggsForBird(bird);
+            Button btn = Button.primary(LAY_EGGS_ADD_IDS[i].name() + ":" + gameId, "➕ " + bird.getName());
+            if (current >= bird.getNest().getCapacity() || eggsRemaining <= 0) {
+                btn = btn.asDisabled();
+            }
+            addButtons.add(btn);
+        }
+
+        // Build remove buttons row
+        List<Button> removeButtons = new ArrayList<>();
+        for (int i = 0; i < birds.size(); i++) {
+            BirdCard bird = birds.get(i);
+            int tempEggs = player.getHand().getTempEggsForBird(bird);
+            Button btn = Button.danger(LAY_EGGS_REMOVE_IDS[i].name() + ":" + gameId, "➖ " + bird.getName());
+            if (tempEggs <= 0) {
+                btn = btn.asDisabled();
+            }
+            removeButtons.add(btn);
+        }
+
+        // Control row
+        Button backButton = Button.secondary(DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_BACK_BUTTON.name() + ":" + gameId, "\uD83D\uDD19 Back");
+        Button submitButton = Button.success(DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_SUBMIT_BUTTON.name() + ":" + gameId, Constants.SUBMIT_SELECTION);
+
+        List<ActionRow> rows = new ArrayList<>();
+        rows.add(ActionRow.of(addButtons));
+        rows.add(ActionRow.of(removeButtons));
+        rows.add(ActionRow.of(backButton, submitButton));
+
+        return new LayEggsMessage(content.toString(), rows);
+    }
+
+    private static int resolveBirdIndex(String buttonComponentId) {
+        for (int i = 0; i < LAY_EGGS_ADD_IDS.length; i++) {
+            if (LAY_EGGS_ADD_IDS[i].name().equals(buttonComponentId)) return i;
+        }
+        for (int i = 0; i < LAY_EGGS_REMOVE_IDS.length; i++) {
+            if (LAY_EGGS_REMOVE_IDS[i].name().equals(buttonComponentId)) return i;
+        }
+        return 0;
+    }
+
+    private static void layEggsAddBird(ButtonInteractionEvent event, Game game, Player player) {
+        String buttonComponentId = event.getComponentId().split(":")[0];
+        int birdIndex = resolveBirdIndex(buttonComponentId);
+        HabitatEnum habitatEnum = parseCurrentHabitatFromMessage(event.getMessage().getContentRaw());
+        if (habitatEnum == null) return;
+
+        List<BirdCard> birds = player.getBoard().getHabitat(habitatEnum).getBirds();
+        if (birdIndex >= birds.size()) return;
+
+        BirdCard bird = birds.get(birdIndex);
+        int maxEggs = parseMaxEggsFromMessage(event.getMessage().getContentRaw());
+        int eggsRemaining = maxEggs - player.getHand().getTotalTempEggs();
+        int current = bird.getNest().getNumberOfEggs() + player.getHand().getTempEggsForBird(bird);
+
+        if (eggsRemaining <= 0 || current >= bird.getNest().getCapacity()) {
+            event.reply("Cannot add more eggs to this bird").setEphemeral(true).queue();
+            return;
+        }
+
+        player.getHand().addTempEgg(bird);
+
+        LayEggsMessage msg = buildLayEggsBirdMessage(game, player, habitatEnum, maxEggs);
+        event.editMessage(msg.content())
+                .setComponents(msg.components())
+                .queue();
+    }
+
+    private static void layEggsRemoveBird(ButtonInteractionEvent event, Game game, Player player) {
+        String buttonComponentId = event.getComponentId().split(":")[0];
+        int birdIndex = resolveBirdIndex(buttonComponentId);
+        HabitatEnum habitatEnum = parseCurrentHabitatFromMessage(event.getMessage().getContentRaw());
+        if (habitatEnum == null) return;
+
+        List<BirdCard> birds = player.getBoard().getHabitat(habitatEnum).getBirds();
+        if (birdIndex >= birds.size()) return;
+
+        BirdCard bird = birds.get(birdIndex);
+        if (player.getHand().getTempEggsForBird(bird) <= 0) {
+            event.reply("No eggs to remove from this bird").setEphemeral(true).queue();
+            return;
+        }
+
+        player.getHand().removeTempEgg(bird);
+
+        int maxEggs = parseMaxEggsFromMessage(event.getMessage().getContentRaw());
+        LayEggsMessage msg = buildLayEggsBirdMessage(game, player, habitatEnum, maxEggs);
+        event.editMessage(msg.content())
+                .setComponents(msg.components())
+                .queue();
+    }
+
+    private static void layEggsBackToHabitat(ButtonInteractionEvent event, Game game, Player player) {
+        int maxEggs = parseMaxEggsFromMessage(event.getMessage().getContentRaw());
+        LayEggsMessage msg = buildLayEggsHabitatMessage(game, player, maxEggs);
+        event.editMessage(msg.content())
+                .setComponents(msg.components())
+                .queue();
+    }
+
+    private static void submitLayEggs(ButtonInteractionEvent event, Game game, Player player) {
+        int totalEggs = player.getHand().getTotalTempEggs();
+        player.getHand().confirmLayEggs();
+
+        event.editMessage(Constants.PICK_ACTION + BoardAction.LAY_EGGS.getLabel() + "\n\n" +
+                        EmojiEnum.EGG.getEmoteId() + " Laid " + totalEggs + " egg" + (totalEggs != 1 ? "s" : ""))
+                .setComponents()
+                .queue();
+
+        GameService.getInstance().confirmLayEggs(game, player, totalEggs);
     }
 }

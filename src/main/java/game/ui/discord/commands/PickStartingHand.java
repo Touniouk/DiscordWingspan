@@ -6,6 +6,7 @@ import game.components.enums.FoodType;
 import game.components.subcomponents.BirdCard;
 import game.components.subcomponents.BonusCard;
 import game.components.subcomponents.Card;
+import game.service.DiscordBotService;
 import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.DiscordObject;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -47,9 +48,9 @@ public class PickStartingHand implements SlashCommand {
 
     @Override
     public void handle(SlashCommandInteractionEvent event) {
-        Optional<GameContext> gameContextOptional = SlashCommand.resolveGameContext(event);
+        Optional<DiscordBotService.GameContext> gameContextOptional = DiscordBotService.resolveGameContext(event);
         if (gameContextOptional.isEmpty()) return;
-        GameContext gameContext = gameContextOptional.get();
+        DiscordBotService.GameContext gameContext = gameContextOptional.get();
 
         sendStartingHand(event, gameContext.game(), gameContext.player());
     }

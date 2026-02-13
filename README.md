@@ -7,9 +7,12 @@ A Discord bot that lets you play the [Wingspan](https://stonemaiergames.com/game
 ## TODO
 
 - [x] Implement playing bird
+   - [ ] Disable +- buttons when spending food
+   - [ ] If bird can only go in one habitat, add it automatically
 - [x] Implement gaining food
-- [ ] Implement laying eggs
+- [x] Implement laying eggs
 - [ ] Implement drawing cards
+- [ ] Implement resource discard on basic actions
 - [ ] Implement brown powers
 - [ ] Implement white powers
 - [ ] Implement pink powers

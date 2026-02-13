@@ -2,6 +2,7 @@ package game.ui.discord.commands;
 
 import game.Player;
 import game.components.subcomponents.BirdCard;
+import game.service.DiscordBotService;
 import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.EmojiEnum;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -48,9 +49,9 @@ public class SeeBoard implements SlashCommand {
         User user = userOptional.orElseGet(event::getUser);
         boolean showHiddenInfo = user.getIdLong() == event.getUser().getIdLong();
 
-        Optional<GameContext> gameContextOptional = SlashCommand.resolveGameContext(event);
+        Optional<DiscordBotService.GameContext> gameContextOptional = DiscordBotService.resolveGameContext(event);
         if (gameContextOptional.isEmpty()) return;
-        GameContext gameContext = gameContextOptional.get();
+        DiscordBotService.GameContext gameContext = gameContextOptional.get();
 
         seeBoard(event, gameContext.player(), showHiddenInfo);
     }

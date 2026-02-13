@@ -153,6 +153,14 @@ public class GameService {
         endTurn(currentGame, currentPlayer);
     }
 
+    public void confirmLayEggs(Game currentGame, Player currentPlayer, int totalEggs) {
+        currentGame.getGameChannel().sendMessage(
+                currentPlayer.getUser().getAsMention() + " laid " + totalEggs + " egg" + (totalEggs != 1 ? "s" : "")
+        ).queue();
+
+        endTurn(currentGame, currentPlayer);
+    }
+
     public void endTurn(Game currentGame, Player currentPlayer) {
         logger.info("Ending turn for player " + currentPlayer.getUser().getName());
         PlayerStateMachine.transition(currentPlayer, PlayerState.WAITING_FOR_TURN);

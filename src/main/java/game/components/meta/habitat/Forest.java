@@ -12,7 +12,6 @@ public class Forest extends Habitat {
      * Number of food a player can gain based on birds in forest.
      */
     public int getNumberOfFoodToGain() {
-        // Check if it's a nectar board
         if (isNectarBoard()) {
             return switch (getBirds().size()) {
                 case 0 -> 1;
