@@ -1,8 +1,11 @@
 package game.ui.discord.commands;
 
 import game.Game;
+import game.Player;
 import game.exception.GameInputException;
+import game.service.DiscordBotService;
 import game.service.GameService;
+import game.ui.discord.enumeration.Constants;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command;
@@ -28,6 +31,23 @@ public interface SlashCommand {
                 .map(game -> new Command.Choice(game.getGameId(), game.getGameId()))
                 .toList();
         event.replyChoices(choices).queue();
+    }
+
+    record GameContext(String gameId, Game game, Player player) {}
+
+    static Optional<GameContext> resolveGameContext(SlashCommandInteractionEvent event) {
+        String gameId;
+        Game currentGame;
+        Player currentPlayer;
+        try {
+            gameId = SlashCommand.resolveGameId(event, Constants.GAME_ID);
+            currentGame = DiscordBotService.getInstance().getGameFromId(event, gameId);
+            currentPlayer = currentGame.getPlayerById(event.getUser().getIdLong());
+            return Optional.of(new GameContext(gameId, currentGame, currentPlayer));
+        } catch (GameInputException ex) {
+            event.reply(ex.getMessage()).setEphemeral(true).queue();
+            return Optional.empty();
+        }
     }
 
     /**

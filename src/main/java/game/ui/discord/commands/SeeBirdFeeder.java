@@ -1,10 +1,7 @@
 package game.ui.discord.commands;
 
-import game.Game;
 import game.components.Feeder;
-import game.components.subcomponents.Die;
-import game.exception.GameInputException;
-import game.service.DiscordBotService;
+import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.EmojiEnum;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
@@ -14,6 +11,7 @@ import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import util.StringUtil;
 
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class SeeBirdFeeder implements SlashCommand {
@@ -21,7 +19,7 @@ public class SeeBirdFeeder implements SlashCommand {
     private static final String name = "see_bird_feeder";
     private static final String description = "See the birdfeeder dice";
 
-    private static final String PARAM_GAME_ID = "game_id";
+    private static final String PARAM_GAME_ID = Constants.GAME_ID;
 
     @Override
     public String getName() {
@@ -41,17 +39,11 @@ public class SeeBirdFeeder implements SlashCommand {
 
     @Override
     public void handle(SlashCommandInteractionEvent event) {
-        String gameId;
-        Game currentGame;
-        try {
-            gameId = SlashCommand.resolveGameId(event, PARAM_GAME_ID);
-            currentGame = DiscordBotService.getInstance().getGameFromId(event, gameId);
-        } catch (GameInputException ex) {
-            event.reply(ex.getMessage()).setEphemeral(true).queue();
-            return;
-        }
+        Optional<GameContext> gameContextOptional = SlashCommand.resolveGameContext(event);
+        if (gameContextOptional.isEmpty()) return;
+        GameContext gameContext = gameContextOptional.get();
 
-        event.replyEmbeds(getFeederEmbed(currentGame.getFeeder()).build())
+        event.replyEmbeds(getFeederEmbed(gameContext.game().getFeeder()).build())
                 .setEphemeral(true)
                 .queue();
     }

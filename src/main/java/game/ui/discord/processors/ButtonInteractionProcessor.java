@@ -7,6 +7,7 @@ import game.components.subcomponents.*;
 import game.exception.GameInputException;
 import game.service.DiscordBotService;
 import game.service.GameService;
+import game.ui.discord.commands.PickStartingHand;
 import game.ui.discord.commands.SeeBoard;
 import game.ui.discord.commands.TakeTurn;
 import game.ui.discord.enumeration.Constants;
@@ -52,6 +53,9 @@ public class ButtonInteractionProcessor {
 
         try {
             switch (DiscordObject.valueOf(componentId)) {
+                case PROMPT_PICK_HAND_BUTTON -> PickStartingHand.sendStartingHand(event, currentGame, currentPlayer);
+                case PROMPT_TAKE_TURN_BUTTON -> TakeTurn.takeTurn(event, currentGame, currentPlayer);
+                case PROMPT_SEE_BOARD_BUTTON -> SeeBoard.seeBoard(event, currentPlayer);
                 case PICK_STARTING_HAND_SUBMIT_BUTTON -> pickStartingHandSubmitButton(event, currentGame, userId);
                 case PICK_STARTING_HAND_RANDOMISE_BUTTON -> pickStartingHandRandomiseButton(event, currentGame, currentPlayer);
                 case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_WORM -> takeTurnActionChoicePlayBirdChooseFoodAddFood(event, FoodType.WORM, currentPlayer);
@@ -74,8 +78,6 @@ public class ButtonInteractionProcessor {
                      TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_4 -> toggleGainFoodDie(event, currentGame);
                 case TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_SUBMIT_BUTTON -> submitGainFood(event, currentGame, currentPlayer);
                 case TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_REROLL_BUTTON -> rerollFeeder(event, currentGame, currentPlayer);
-                case PROMPT_TAKE_TURN_BUTTON -> TakeTurn.takeTurn(event, currentGame, currentPlayer);
-                case PROMPT_SEE_BOARD_BUTTON -> SeeBoard.seeBoard(event, currentPlayer);
                 default -> logger.warn("Button id not matched: " + componentId);
             }
         } catch (GameInputException ex) {

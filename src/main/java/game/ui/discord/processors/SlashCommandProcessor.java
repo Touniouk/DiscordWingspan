@@ -24,6 +24,7 @@ public class SlashCommandProcessor {
                 new ExampleEmbed(),
                 new ExampleSelectMenu(),
                 new CreateGame(),
+                new PickStartingHand(),
                 new TakeTurn(),
                 new GetActiveGames(),
                 new SeeBoard(),

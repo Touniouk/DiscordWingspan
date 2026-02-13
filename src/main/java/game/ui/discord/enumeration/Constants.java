@@ -1,6 +1,7 @@
 package game.ui.discord.enumeration;
 
 public class Constants {
+    public static final String GAME_ID = "game_id";
     public static final String SUBMIT_SELECTION = "✅ Submit Selection";
     public static final String BIRDS_NOT_SELECTED = "❌ Birds Selected";
     public static final String BIRDS_SELECTED = "✅ Birds Selected";

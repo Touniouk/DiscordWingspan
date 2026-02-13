@@ -1,7 +1,6 @@
 package game.service;
 
 import game.Game;
-import game.Player;
 import game.exception.GameInputException;
 import lombok.Getter;
 import net.dv8tion.jda.api.JDA;
@@ -13,7 +12,7 @@ import util.Logger;
 public class DiscordBotService {
 
     // Logger
-    private final Logger logger = new Logger(GameService.class, LogLevel.ALL);
+    private final Logger logger = new Logger(DiscordBotService.class, LogLevel.ALL);
     private static final DiscordBotService INSTANCE = new DiscordBotService();
 
     @Getter
@@ -41,10 +40,5 @@ public class DiscordBotService {
             throw new GameInputException("You are not part of game `" + gameId + "`");
         }
         return currentGame;
-    }
-
-    public Player getPlayerFromGame(GenericInteractionCreateEvent event, String gameId) throws GameInputException {
-        Game currentGame = getGameFromId(event, gameId);
-        return currentGame.getPlayerById(event.getUser().getIdLong());
     }
 }

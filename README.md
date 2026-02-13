@@ -2,29 +2,32 @@
 
 A Discord bot that lets you play the [Wingspan](https://stonemaiergames.com/games/wingspan/) board game with friends, right inside a Discord server. Create games, draft starting hands, place birds on your board, and compete for the highest score — all through slash commands and interactive buttons.
 
-> **Status:** In development. Game creation, starting hand drafting, board display, and turn actions (Gain Food, Play Bird) are functional. Draw Cards, Lay Eggs, bird powers, scoring, and end-of-round goals are still in progress.
+> **Status:** In development. Game creation, starting hand drafting, board and feeder display all functional. Basic actions (Play bird, Gain food, Lay eggs, Draw cards) are still in progress.
 
-## Features
+## TODO
 
-- **Create & join games** with 1–5 players
-- **Starting hand draft** — choose which birds and food to keep
-- **Board display** — view any player's 3-habitat board with placed birds
-- **Gain Food** — pick dice from the birdfeeder, with dual-food cycling and reroll support
-- **Play Bird** — select a bird, pay its food cost, and place it in a habitat
-- **Food cost validation** — supports wild food, either/or costs, and 2-for-1 conversions
-- **Bird feeder display** — view dice in and out of the feeder
-- **Turn management** — enforces turn order and advances to the next player
-- **Oceania expansion** support (Nectar board variant)
+- [x] Implement playing bird
+- [x] Implement gaining food
+- [ ] Implement laying eggs
+- [ ] Implement drawing cards
+- [ ] Implement brown powers
+- [ ] Implement white powers
+- [ ] Implement pink powers
+- [ ] Implement end of rounds
+- [ ] Implement bonus card scoring
+- [ ] Playing with nectar
+- [ ] Nectar scoring
 
 ### Slash Commands
 
-| Command | Description |
-|---------|-------------|
-| `/create_game` | Create a new game and invite players |
-| `/take_turn` | Take your turn (Gain Food, Play Bird) |
-| `/see_board` | View a player's board |
-| `/see_bird_feeder` | View the birdfeeder dice |
-| `/get_active_games` | List your ongoing games |
+| Command               | Description                                    |
+|-----------------------|------------------------------------------------|
+| `/create_game`        | Create a new game and invite players           |
+| `/pick_starting_hand` | Choose your bird, bonus and food to start with |
+| `/take_turn`          | Take your turn (Gain Food, Play Bird)          |
+| `/see_board`          | View a player's board                          |
+| `/see_bird_feeder`    | View the birdfeeder dice                       |
+| `/get_active_games`   | List your ongoing games                        |
 
 ## Tech Stack
 
