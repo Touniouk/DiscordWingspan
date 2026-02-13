@@ -41,6 +41,7 @@ public class SeeBoard implements SlashCommand {
     @Override
     public void handleAutoComplete(CommandAutoCompleteInteractionEvent event) {
         SlashCommand.autoCompleteGameId(event);
+        // TODO: Clicking the see board button should trigger a selector for the player
     }
 
     @Override

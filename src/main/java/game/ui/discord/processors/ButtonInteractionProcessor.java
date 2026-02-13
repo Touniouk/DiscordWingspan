@@ -10,9 +10,7 @@ import game.components.subcomponents.*;
 import game.exception.GameInputException;
 import game.service.DiscordBotService;
 import game.service.GameService;
-import game.ui.discord.commands.PickStartingHand;
-import game.ui.discord.commands.SeeBoard;
-import game.ui.discord.commands.TakeTurn;
+import game.ui.discord.commands.*;
 import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.DiscordObject;
 import game.ui.discord.enumeration.EmojiEnum;
@@ -50,6 +48,8 @@ public class ButtonInteractionProcessor {
                 case PROMPT_PICK_HAND_BUTTON -> PickStartingHand.sendStartingHand(event, gameContext.game(), gameContext.player());
                 case PROMPT_TAKE_TURN_BUTTON -> TakeTurn.takeTurn(event, gameContext.game(), gameContext.player());
                 case PROMPT_SEE_BOARD_BUTTON -> SeeBoard.seeBoard(event, gameContext.player());
+                case PROMPT_SEE_FEEDER_BUTTON -> SeeBirdFeeder.seeBirdFeeder(event, gameContext);
+                case PROMPT_SEE_TRAY_BUTTON -> SeeTray.seeTray(event, gameContext.game());
                 case PICK_STARTING_HAND_SUBMIT_BUTTON -> pickStartingHandSubmitButton(event, gameContext.game(), userId);
                 case PICK_STARTING_HAND_RANDOMISE_BUTTON -> pickStartingHandRandomiseButton(event, gameContext.game(), gameContext.player());
                 case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_WORM,
@@ -759,5 +759,13 @@ public class ButtonInteractionProcessor {
                 .queue();
 
         GameService.getInstance().confirmLayEggs(game, player, totalEggs);
+    }
+
+    // ======================== LAY EGGS ========================
+
+    record DrawCardsMessage(String content, List<ActionRow> components) {}
+
+    public static LayEggsMessage buildDrawCardsMessage(Game currentGame, Player currentPlayer, int maxDraws) {
+        return null;
     }
 }

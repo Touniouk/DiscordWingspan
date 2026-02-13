@@ -162,6 +162,7 @@ public class StringSelectInteractionProcessor {
 
     private static void gainFood(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
         int maxFood = currentPlayer.getBoard().getForest().getNumberOfFoodToGain();
+
         ButtonInteractionProcessor.FeedPickerMessage picker = ButtonInteractionProcessor.buildFeedPickerMessage(currentGame, maxFood, "");
         event.editMessage(picker.content())
                 .setComponents(picker.components())
@@ -185,7 +186,12 @@ public class StringSelectInteractionProcessor {
     }
 
     private static void drawCards(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
-        // TODO
+        int maxDraws = currentPlayer.getBoard().getWetland().getNumberOfCardsToDraw();
+
+        ButtonInteractionProcessor.LayEggsMessage msg = ButtonInteractionProcessor.buildDrawCardsMessage(currentGame, currentPlayer, maxDraws);
+        event.editMessage(msg.content())
+                .setComponents(msg.components())
+                .queue();
     }
 
     private static void playBird(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) throws GameInputException {

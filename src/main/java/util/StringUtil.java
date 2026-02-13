@@ -70,6 +70,10 @@ public class StringUtil {
         return builder.toString();
     }
 
+    /**
+     * Replace placeholders in [] with the appropriate emoji
+     * ex: [seed] gets replaced with the seed emoji
+     */
     public static String replacePlaceholders(String text) {
         Pattern pattern = Pattern.compile("\\[([^]]+)]");
         Matcher matcher = pattern.matcher(text);

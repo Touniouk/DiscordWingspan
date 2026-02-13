@@ -28,7 +28,8 @@ public class SlashCommandProcessor {
                 new TakeTurn(),
                 new GetActiveGames(),
                 new SeeBoard(),
-                new SeeBirdFeeder()
+                new SeeBirdFeeder(),
+                new SeeTray()
         ).collect(Collectors.toMap(SlashCommand::getName, c -> c));
     }
 

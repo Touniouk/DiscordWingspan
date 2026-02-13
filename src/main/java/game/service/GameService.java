@@ -67,9 +67,11 @@ public class GameService {
         String gameId = game.getGameId();
         Button takeTurnButton = Button.success(DiscordObject.PROMPT_TAKE_TURN_BUTTON.name() + ":" + gameId, "\uD83C\uDFAF Take Turn");
         Button seeBoardButton = Button.secondary(DiscordObject.PROMPT_SEE_BOARD_BUTTON.name() + ":" + gameId, "\uD83D\uDCCB See Board");
+        Button seeFeederButton = Button.secondary(DiscordObject.PROMPT_SEE_FEEDER_BUTTON.name() + ":" + gameId, "\uD83C\uDFB2 See Feeder");
+        Button seeTrayButton = Button.secondary(DiscordObject.PROMPT_SEE_TRAY_BUTTON.name() + ":" + gameId, "\uD83D\uDC26 See Tray");
         game.getGameChannel().sendMessage(
                 player.getUser().getAsMention() + " please take your turn (turn " + game.getTurnCounter() + ")")
-                .addActionRow(takeTurnButton, seeBoardButton)
+                .addActionRow(takeTurnButton, seeBoardButton, seeFeederButton, seeTrayButton)
                 .queue();
     }
 

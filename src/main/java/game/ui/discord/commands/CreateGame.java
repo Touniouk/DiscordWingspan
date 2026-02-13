@@ -82,9 +82,15 @@ public class CreateGame implements SlashCommand {
         }
 
         Button takeTurnButton = Button.success(DiscordObject.PROMPT_PICK_HAND_BUTTON.name() + ":" + gameId, "\uD83D\uDC50 Pick Starting Hand");
-        String playersAsMention = StringUtil.getListAsString(GameService.getInstance().getGame(gameId).getPlayers().stream().map(p -> p.getUser().getAsMention()).toList(), "");
+        Button seeFeederButton = Button.secondary(DiscordObject.PROMPT_SEE_FEEDER_BUTTON.name() + ":" + gameId, "\uD83C\uDFB2 See Feeder");
+        Button seeTrayButton = Button.secondary(DiscordObject.PROMPT_SEE_TRAY_BUTTON.name() + ":" + gameId, "\uD83D\uDC26 See Tray");
+        String playersAsMention = StringUtil.getListAsString(
+                GameService.getInstance().getGame(gameId)
+                        .getPlayers().stream()
+                        .map(p -> p.getUser().getAsMention())
+                        .toList(), "");
         event.reply("Game `" + gameId + "` created with " + playersAsMention)
-                .addActionRow(takeTurnButton)
+                .addActionRow(takeTurnButton, seeFeederButton, seeTrayButton)
                 .queue();
     }
 

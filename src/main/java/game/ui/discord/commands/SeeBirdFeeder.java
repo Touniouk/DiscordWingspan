@@ -7,6 +7,7 @@ import game.ui.discord.enumeration.EmojiEnum;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -44,12 +45,16 @@ public class SeeBirdFeeder implements SlashCommand {
         if (gameContextOptional.isEmpty()) return;
         DiscordBotService.GameContext gameContext = gameContextOptional.get();
 
+        seeBirdFeeder(event, gameContext);
+    }
+
+    public static void seeBirdFeeder(IReplyCallback event, DiscordBotService.GameContext gameContext) {
         event.replyEmbeds(getFeederEmbed(gameContext.game().getFeeder()).build())
                 .setEphemeral(true)
                 .queue();
     }
 
-    private EmbedBuilder getFeederEmbed(Feeder feeder) {
+    private static EmbedBuilder getFeederEmbed(Feeder feeder) {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle(StringUtil.replacePlaceholders("**\uD83C\uDFB2 Birdfeeder **"));
         embed.setColor(0x1abc9c);

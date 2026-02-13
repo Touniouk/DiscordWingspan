@@ -1,12 +1,15 @@
 package game.components;
 
 import game.components.subcomponents.BirdCard;
+import lombok.Getter;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 
 public class BirdDeck extends CardDeck<BirdCard> {
+
+    @Getter
     private final Deque<BirdCard> tray;
 
     public BirdDeck(List<BirdCard> cardDeck) {
