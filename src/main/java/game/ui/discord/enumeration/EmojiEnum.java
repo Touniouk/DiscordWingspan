@@ -2,7 +2,6 @@ package game.ui.discord.enumeration;
 
 import game.components.enums.FoodType;
 import game.components.subcomponents.DieFace;
-import game.ui.discord.processors.StringSelectInteractionProcessor;
 import lombok.Getter;
 import util.LogLevel;
 import util.Logger;
@@ -15,31 +14,44 @@ import java.util.stream.IntStream;
 @Getter
 public enum EmojiEnum {
     // Food types
-    SEED("seed", "<:seed:1394916027992768605>"),
-    WORM("invertebrate", "<:invertebrate:1394915837965504584>"),
-    FISH("fish", "<:fish:1394915631912190002>"),
-    RODENT("rodent", "<:rodent:1394916078689452122>"),
-    FRUIT("fruit", "<:fruit:1394915684370088006>"),
-    NECTAR("nectar", "<:nectar:1394915864943530014>"),
-    WILD("wild", "<:wild:1394915931792085022>"),
+    SEED("seed", "<:seed:1471704305122672680>"),
+    WORM("invertebrate", "<:invertebrate:1471704292330049677>"),
+    FISH("fish", "<:fish:1471704282263851008>"),
+    RODENT("rodent", "<:rodent:1471704303180714147>"),
+    FRUIT("fruit", "<:fruit:1471704286827253842>"),
+    NECTAR("nectar", "<:nectar:1471704294423134342>"),
+    WILD("wild", "<:wild:1471704309229158420>"),
+    NO_FOOD("nofood", "<:nofood:1471704296394461307>"),
 
     // Game objects
-    CARD("card", "<:card:1394915394711457824>"),
-    EGG("egg", "<:egg:1394915577302351993>"),
-    BIRD("bird", "<:bird:1394915269763403908>"),
-    BONUS("bonus-card", "<:bonuscard:1394915304265613352>"),
+    DIE("die", "<:die:1471704277729677484>"),
+    CARD("card", "<:card:1471704274445537444>"),
+    EGG("egg", "<:egg:1471704279868768316>"),
+    BIRD("bird", "<:bird:1471704270079266876>"),
+    BONUS("bonus-card", "<:bonuscard:1471704271417512093>"),
 
     // Nest types
-    CAVITY("cavity", "<:cavity:1394915439129399356>"),
-    BOWL("bowl", "<:bowl:1394915359294750860>"),
-    PLATFORM("platform", "<:platform:1394915905489604641>"),
-    GROUND("ground", "<:ground:1394915786673623070>"),
-    STAR("star", "<:star:1394916002617102356>"),
+    CAVITY("cavity", "<:cavity:1471704276098093199>"),
+    BOWL("bowl", "<:bowl:1471704272721940531>"),
+    PLATFORM("platform", "<:platform:1471704298034434058>"),
+    GROUND("ground", "<:ground:1471704290509979689>"),
+    STAR("star", "<:star:1471704306376904805>"),
 
     // Habitat
-    WETLAND("wetland", "<:wetland:1394915957394243694>"),
-    GRASSLAND("grassland", "<:grassland:1394915762304454689>"),
-    FOREST("forest", "<:forest:1394915726741082204>");
+    WETLAND("wetland", "<:wetland:1471704307291131916>"),
+    GRASSLAND("grassland", "<:grassland:1471704289037647937>"),
+    FOREST("forest", "<:forest:1471704285430415410>"),
+
+    // BEAK
+    BEAK_RIGHT("beakright", "<:beakright:1471704268527501393>"),
+    BEAK_LEFT("beakleft", "<:beakleft:1471704266673750088>"),
+
+    // POWERS
+    PREDATOR("predator", "<:predator:1471704301494603886>"),
+    FLOCKING("flocking", "<:flocking:1471704283404701830>"),
+
+    // OTHERS
+    FEATHER_POINTS("point", "<:point:1471704299808489625>");
 
     private static final Logger logger = new Logger(EmojiEnum.class, LogLevel.ALL);
 
