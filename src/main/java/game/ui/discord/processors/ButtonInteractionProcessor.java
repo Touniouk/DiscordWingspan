@@ -31,6 +31,7 @@ import util.StringUtil;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class ButtonInteractionProcessor {
@@ -45,11 +46,14 @@ public class ButtonInteractionProcessor {
 
         try {
             switch (DiscordObject.valueOf(gameContext.componentId())) {
+                // Generic buttons
                 case PROMPT_PICK_HAND_BUTTON -> PickStartingHand.sendStartingHand(event, gameContext.game(), gameContext.player());
                 case PROMPT_TAKE_TURN_BUTTON -> TakeTurn.takeTurn(event, gameContext.game(), gameContext.player());
                 case PROMPT_SEE_BOARD_BUTTON -> SeeBoard.seeBoard(event, gameContext.player());
                 case PROMPT_SEE_FEEDER_BUTTON -> SeeBirdFeeder.seeBirdFeeder(event, gameContext);
                 case PROMPT_SEE_TRAY_BUTTON -> SeeTray.seeTray(event, gameContext.game());
+
+                // Pick Starting hand buttons
                 case PICK_STARTING_HAND_SUBMIT_BUTTON -> pickStartingHandSubmitButton(event, gameContext.game(), userId);
                 case PICK_STARTING_HAND_RANDOMISE_BUTTON -> pickStartingHandRandomiseButton(event, gameContext.game(), gameContext.player());
                 case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_WORM,
@@ -65,6 +69,8 @@ public class ButtonInteractionProcessor {
                      TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_FRUIT,
                      TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_SEED -> takeTurnActionChoicePlayBirdChooseFoodRemoveFood(event, gameContext);
                 case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_SUBMIT_BUTTON -> takeTurnActionChoicePlayBirdChooseFoodSubmitButton(event, gameContext.gameId(), gameContext.player());
+
+                // Gain food buttons
                 case TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_0,
                      TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_1,
                      TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_2,
@@ -72,6 +78,8 @@ public class ButtonInteractionProcessor {
                      TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_4 -> toggleGainFoodDie(event, gameContext.game());
                 case TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_SUBMIT_BUTTON -> submitGainFood(event, gameContext.game(), gameContext.player());
                 case TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_REROLL_BUTTON -> rerollFeeder(event, gameContext.game(), gameContext.player());
+
+                // Lay Eggs buttons
                 case TAKE_TURN_ACTION_CHOICE_LAY_EGGS_HABITAT_FOREST -> showLayEggsBirdsForHabitat(event, gameContext.game(), gameContext.player(), HabitatEnum.FOREST);
                 case TAKE_TURN_ACTION_CHOICE_LAY_EGGS_HABITAT_GRASSLAND -> showLayEggsBirdsForHabitat(event, gameContext.game(), gameContext.player(), HabitatEnum.GRASSLAND);
                 case TAKE_TURN_ACTION_CHOICE_LAY_EGGS_HABITAT_WETLAND -> showLayEggsBirdsForHabitat(event, gameContext.game(), gameContext.player(), HabitatEnum.WETLAND);
@@ -87,6 +95,13 @@ public class ButtonInteractionProcessor {
                      TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_4 -> layEggsRemoveBird(event, gameContext.game(), gameContext.player());
                 case TAKE_TURN_ACTION_CHOICE_LAY_EGGS_BACK_BUTTON -> layEggsBackToHabitat(event, gameContext.game(), gameContext.player());
                 case TAKE_TURN_ACTION_CHOICE_LAY_EGGS_SUBMIT_BUTTON -> submitLayEggs(event, gameContext.game(), gameContext.player());
+
+                // Draw cards buttons
+                case TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_DRAW_TRAY_0,
+                     TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_DRAW_TRAY_1,
+                     TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_DRAW_TRAY_2 -> toggleTrayBirdSelected(event, gameContext.game(), gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_DRAW_DECK -> drawCardFromDeck(event, gameContext.game(), gameContext.player());
+                case TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_SUBMIT -> submitCardDrawSelection(event, gameContext.game(), gameContext.player());
                 default -> logger.warn("Button id not matched: " + gameContext.componentId());
             }
         } catch (GameInputException ex) {
@@ -372,6 +387,7 @@ public class ButtonInteractionProcessor {
                 selectedIndicesForReroll.add(resolveDieIndex(btnCompId));
             }
         }
+
         // Consider those dice removed and check if you can reroll
         List<DieFace> dieFaces = IntStream.range(0, game.getFeeder().getDiceInFeeder().size())
                 .filter(i -> !selectedIndicesForReroll.contains(i))
@@ -407,9 +423,8 @@ public class ButtonInteractionProcessor {
         }
 
         Button submitButton = Button.success(DiscordObject.TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_SUBMIT_BUTTON.name() + ":" + gameId, Constants.SUBMIT_SELECTION);
-        Button rerollButton = game.getFeeder().canBeRerolled() ?
-                Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_REROLL_BUTTON.name() + ":" + gameId, "\uD83C\uDFB2 Reroll Feeder") :
-                Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_REROLL_BUTTON.name() + ":" + gameId, "\uD83C\uDFB2 Reroll Feeder").asDisabled();
+        Button rerollButton = Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_REROLL_BUTTON.name() + ":" + gameId, "\uD83C\uDFB2 Reroll Feeder")
+                .withDisabled(game.getFeeder().canBeRerolled());
 
         boolean hasDualFoodDie = dice.stream().anyMatch(die -> die.getVisibleFace().isDualFood());
         String message = Constants.PICK_ACTION + "Gain Food\n\n" +
@@ -761,11 +776,165 @@ public class ButtonInteractionProcessor {
         GameService.getInstance().confirmLayEggs(game, player, totalEggs);
     }
 
-    // ======================== LAY EGGS ========================
+    // ======================== DRAW CARDS ========================
 
     record DrawCardsMessage(String content, List<ActionRow> components) {}
 
-    public static LayEggsMessage buildDrawCardsMessage(Game currentGame, Player currentPlayer, int maxDraws) {
-        return null;
+    public static DrawCardsMessage buildDrawCardsMessage(Game game, Player player, int maxDraw, int selectedCount) {
+        List<Button> drawTrayButtons = new ArrayList<>();
+        for (int i = 0; i < DiscordObject.DRAW_FROM_TRAY_IDS.length; i++) {
+            drawTrayButtons.add(Button.secondary(DiscordObject.DRAW_FROM_TRAY_IDS[i] + ":" + game.getGameId(), game.getBirdDeck().getTray()[i].getName())
+                    .withEmoji(Emoji.fromFormatted(EmojiEnum.BIRD.getEmoteId())));
+        }
+
+        return buildDrawCardsMessage(game, player, maxDraw, selectedCount, drawTrayButtons);
+    }
+
+    private static DrawCardsMessage buildDrawCardsMessage(Game game, Player player, int maxDraw, int selectedCount, List<Button> drawTrayButtons) {
+        Button drawDeckButton = Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_DRAW_DECK + ":" + game.getGameId(), "Deck")
+                .withEmoji(Emoji.fromFormatted(EmojiEnum.CARD.getEmoteId()))
+                .withDisabled(selectedCount >= maxDraw);
+
+        String drawnBirds = player.getHand().getTempDrawnBirds().isEmpty() ?
+                "Drawn: (nothing yet)" :
+                "Drawn: " + player.getHand().getTempDrawnBirds().stream()
+                        .map(Card::getName)
+                        .collect(Collectors.joining(" | ")) + "\n";
+        String message = Constants.PICK_ACTION + BoardAction.DRAW_CARDS.getLabel() + "\n\n" +
+                Constants.DRAW_CARDS + "Draw up to **" + maxDraw + "** cards\n" +
+                "Cards remaining: " + (maxDraw - selectedCount) + "\n\n" +
+                drawnBirds;
+
+        Button submitButton = Button.success(DiscordObject.TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_SUBMIT + ":" + game.getGameId(), Constants.SUBMIT_SELECTION);
+        List<ActionRow> components = List.of(ActionRow.of(drawTrayButtons), ActionRow.of(drawDeckButton), ActionRow.of(submitButton));
+        return new DrawCardsMessage(message, components);
+    }
+
+    private static void toggleTrayBirdSelected(ButtonInteractionEvent event, Game game, Player player) {
+        String clickedId = event.getComponentId();
+
+        List<ActionRow> oldRows = event.getMessage().getActionRows();
+        ActionRow drawTray = oldRows.get(0);
+
+        String messageContent = event.getMessage().getContentRaw();
+        int maxDraw = parseMaxDrawMessage(messageContent);
+
+        // Toggle the clicked button
+        List<ItemComponent> newTrayButtons = new ArrayList<>();
+        int selectedCount = player.getHand().getTempDrawnBirds().size();
+        for (ItemComponent component : drawTray.getComponents()) {
+            if (component instanceof Button button) {
+                boolean isClicked = clickedId.equals(button.getId());
+                ButtonStyle currentStyle = button.getStyle();
+                if (isClicked) {
+                    ButtonStyle newStyle = (currentStyle == ButtonStyle.SUCCESS) ? ButtonStyle.SECONDARY : ButtonStyle.SUCCESS;
+                    Button newButton = (newStyle == ButtonStyle.SUCCESS)
+                            ? Button.success(button.getId(), button.getLabel())
+                            : Button.secondary(button.getId(), button.getLabel());
+                    if (button.getEmoji() != null) {
+                        newButton = newButton.withEmoji(button.getEmoji());
+                    }
+                    newTrayButtons.add(newButton);
+                    if (newStyle == ButtonStyle.SUCCESS) selectedCount++;
+                } else {
+                    newTrayButtons.add(button);
+                    if (currentStyle == ButtonStyle.SUCCESS) selectedCount++;
+                }
+            }
+        }
+
+        // If at max: disable unselected buttons; otherwise enable all
+        List<Button> finalTrayButtons = new ArrayList<>();
+        for (ItemComponent component : newTrayButtons) {
+            if (component instanceof Button button) {
+                if (selectedCount >= maxDraw && button.getStyle() == ButtonStyle.SECONDARY) {
+                    finalTrayButtons.add(button.asDisabled());
+                } else {
+                    finalTrayButtons.add(button.asEnabled());
+                }
+            }
+        }
+
+        // Build the response
+        ButtonInteractionProcessor.DrawCardsMessage msg = ButtonInteractionProcessor.buildDrawCardsMessage(game, player, maxDraw, selectedCount, finalTrayButtons);
+        event.editMessage(msg.content())
+                .setComponents(msg.components())
+                .queue();
+    }
+
+    private static void drawCardFromDeck(ButtonInteractionEvent event, Game game, Player player) {
+        List<ActionRow> oldRows = event.getMessage().getActionRows();
+        ActionRow drawTray = oldRows.get(0);
+        ActionRow drawDeck = oldRows.get(1);
+
+        // Draw card from deck
+        player.getHand().getTempDrawnBirds().add(game.getBirdDeck().drawCard());
+
+        String messageContent = event.getMessage().getContentRaw();
+        int maxDraw = parseMaxDrawMessage(messageContent);
+
+        // Count selected tray birds + drawn deck birds
+        int selectedCount = player.getHand().getTempDrawnBirds().size();
+        selectedCount += drawTray.getComponents().stream()
+                .filter(component -> component instanceof Button)
+                .filter(button -> ((Button) button).getStyle() == ButtonStyle.SUCCESS)
+                .count();
+
+        // If at max: disable unselected buttons; otherwise enable all
+        List<Button> finalTrayButtons = new ArrayList<>();
+        for (ItemComponent component : drawTray.getComponents()) {
+            if (component instanceof Button button) {
+                if (selectedCount >= maxDraw && button.getStyle() == ButtonStyle.SECONDARY) {
+                    finalTrayButtons.add(button.asDisabled());
+                } else {
+                    finalTrayButtons.add(button.asEnabled());
+                }
+            }
+        }
+
+        // Build the response
+        ButtonInteractionProcessor.DrawCardsMessage msg = ButtonInteractionProcessor.buildDrawCardsMessage(game, player, maxDraw, selectedCount, finalTrayButtons);
+        event.editMessage(msg.content())
+                .setComponents(msg.components())
+                .queue();
+    }
+
+    private static void submitCardDrawSelection(ButtonInteractionEvent event, Game game, Player player) {
+        List<ActionRow> oldRows = event.getMessage().getActionRows();
+        ActionRow drawTray = oldRows.get(0);
+        List<Integer> selectedTrayIndexes = drawTray.getComponents().stream()
+                .filter(component -> component instanceof Button)
+                .map(component -> (Button) component)
+                .filter(button -> button.getStyle() == ButtonStyle.SUCCESS)
+                .map(button -> Objects.requireNonNull(button.getId()).split(":")[0])
+                .map(ButtonInteractionProcessor::resolveTrayIndex)
+                .toList();
+
+        int drawnCards = game.confirmDrawBirdSelection(player, selectedTrayIndexes);
+
+        String drawnBirds = "Drew **" + drawnCards + " cards\n";
+        String message = Constants.PICK_ACTION + BoardAction.DRAW_CARDS.getLabel() + "\n\n" +
+                drawnBirds;
+        event.editMessage(message)
+                .setComponents()
+                .queue();
+
+        GameService.getInstance().confirmDrawCards(game, player, drawnCards);
+    }
+
+    private static int parseMaxDrawMessage(String content) {
+        Matcher matcher = Pattern.compile("Draw up to \\*\\*(\\d+)\\*\\* cards").matcher(content);
+        int maxDraw = matcher.find() ? Integer.parseInt(matcher.group(1)) : 1;
+        logger.debug("Max draw found in message : " + maxDraw);
+        return maxDraw;
+    }
+
+    private static int resolveTrayIndex(String buttonComponentId) {
+        for (int i = 0; i < DiscordObject.DRAW_FROM_TRAY_IDS.length; i++) {
+            if (DiscordObject.DRAW_FROM_TRAY_IDS[i].name().equals(buttonComponentId)) {
+                return i;
+            }
+        }
+        return 0;
     }
 }

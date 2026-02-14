@@ -230,6 +230,17 @@ public class Game {
         }
     }
 
+    /**
+     * Confirm the selection of drawn birds. This includes the selected tray birds as well as the birds drawn from the deck
+     */
+    public int confirmDrawBirdSelection(Player player, List<Integer> selectedTrayIndexes) {
+        int drawnCards = player.getHand().getTempDrawnBirds().size() + selectedTrayIndexes.size();
+        player.getHand().getBirdCards().addAll(player.getHand().getTempDrawnBirds());
+        player.getHand().getBirdCards().addAll(this.getBirdDeck().getTrayBirds(selectedTrayIndexes));
+        player.getHand().getTempDrawnBirds().clear();
+        return drawnCards;
+    }
+
     //*****************************************************************
     // STATIC MEMBERS
     //*****************************************************************

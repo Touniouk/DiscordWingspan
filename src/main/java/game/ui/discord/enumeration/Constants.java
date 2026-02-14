@@ -23,4 +23,5 @@ public class Constants {
     public static final String CHOOSE_FOOD_FROM_FEEDER = "**\uD83C\uDFB2 Pick a food from the birdfeeder: **";
     public static final String CHOOSE_EGGS_TO_LAY = "**\uD83E\uDD5A Lay eggs on your birds: **";
     public static final String LAY_EGGS_REMAINING = "Eggs remaining: ";
+    public static final String DRAW_CARDS = "**" + EmojiEnum.CARD.getEmoteId() + " Draw cards: **";
 }

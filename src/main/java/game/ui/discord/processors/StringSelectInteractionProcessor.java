@@ -186,9 +186,10 @@ public class StringSelectInteractionProcessor {
     }
 
     private static void drawCards(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
-        int maxDraws = currentPlayer.getBoard().getWetland().getNumberOfCardsToDraw();
+        int maxDraw = currentPlayer.getBoard().getWetland().getNumberOfCardsToDraw();
+        currentPlayer.getHand().resetTempDrawnBirds();
 
-        ButtonInteractionProcessor.LayEggsMessage msg = ButtonInteractionProcessor.buildDrawCardsMessage(currentGame, currentPlayer, maxDraws);
+        ButtonInteractionProcessor.DrawCardsMessage msg = ButtonInteractionProcessor.buildDrawCardsMessage(currentGame, currentPlayer, maxDraw, 0);
         event.editMessage(msg.content())
                 .setComponents(msg.components())
                 .queue();

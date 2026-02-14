@@ -179,4 +179,12 @@ public class GameService {
             case TAKE_TURN -> player.getState() == PlayerState.PLAYING_TURN;
         };
     }
+
+    public void confirmDrawCards(Game currentGame, Player currentPlayer, int totalCards) {
+        currentGame.getGameChannel().sendMessage(
+                currentPlayer.getUser().getAsMention() + " drew " + totalCards + " card" + (totalCards != 1 ? "s" : "")
+        ).queue();
+
+        endTurn(currentGame, currentPlayer);
+    }
 }

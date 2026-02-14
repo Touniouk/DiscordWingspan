@@ -18,6 +18,7 @@ public class Hand {
     private final Map<FoodType, Integer> tempPantrySpentFood;
     private final Map<FoodType, Integer> tempPantryAvailableFood;
     private final Map<BirdCard, Integer> tempEggsToLay;
+    private final List<BirdCard> tempDrawnBirds;
 
     public Hand(boolean nectar) {
         this.birdCards = new ArrayList<>();
@@ -29,6 +30,7 @@ public class Hand {
         this.tempPantryAvailableFood = Stream.of(FoodType.WORM, FoodType.SEED, FoodType.FRUIT, FoodType.RODENT, FoodType.FISH, FoodType.NECTAR)
                 .collect(Collectors.toMap(food -> food, food -> 0));
         this.tempEggsToLay = new HashMap<>();
+        this.tempDrawnBirds = new ArrayList<>();
     }
 
     public void addBird(BirdCard birdCard) {
@@ -42,6 +44,10 @@ public class Hand {
     public void resetTempPantry() {
         tempPantrySpentFood.forEach((k, v) -> tempPantrySpentFood.put(k, 0));
         pantry.forEach((k, v) -> tempPantryAvailableFood.put(k, pantry.get(k)));
+    }
+
+    public void resetTempDrawnBirds() {
+        tempDrawnBirds.clear();
     }
 
     public void resetPantry() {
