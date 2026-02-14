@@ -22,6 +22,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Singleton service managing the game lifecycle: creating games, starting turns,
+ * validating player actions, and progressing through rounds.
+ */
 public class GameService {
 
     // Logger
@@ -37,6 +41,11 @@ public class GameService {
         return INSTANCE;
     }
 
+    /**
+     * Creates a new game in the given channel with the provided players and starts it.
+     *
+     * @return the newly created and started game
+     */
     public Game createGame(TextChannel gameChannel, List<User> playerList) {
         Game game = new Game(gameChannel, activeGames.values().size(), playerList.toArray(new User[0]));
         activeGames.put(game.getGameId(), game);
@@ -44,6 +53,11 @@ public class GameService {
         return game;
     }
 
+    /**
+     * Confirms a player's starting hand selection in the specified game.
+     *
+     * @throws GameInputException if the selection is invalid
+     */
     public void confirmStartingHandPick(String gameId, long userId) throws GameInputException {
         Game game = activeGames.get(gameId);
         game.confirmStartingHandPick(userId);
@@ -75,12 +89,18 @@ public class GameService {
                 .queue();
     }
 
+    /**
+     * Checks if all players in the game are ready, and if so, starts the first turn.
+     */
     public void checkAllPlayersReady(Game game) {
         if (game.allPlayersReady()) {
             startFirstTurn(game);
         }
     }
 
+    /**
+     * Returns all active games that the given player is participating in.
+     */
     public List<Game> getActiveGames(long playerId) {
         return activeGames
                 .values()
@@ -109,6 +129,13 @@ public class GameService {
         return res;
     }
 
+    /**
+     * Checks a single (non-slash) food cost against the spent food.
+     * Wild food types in the cost can be paid with any food. Excess food
+     * can cover missing types at a 2-for-1 rate.
+     *
+     * @return negative if underpaid, positive if overpaid, 0 if exact
+     */
     public int checkFoodCostNoSlash(List<FoodType> foodCost, Map<FoodType, Integer> spentFood) {
         int leftoverFood = 0; // Food still unpaid from the food cost
         int unspentFood = 0; // Food we still have in hand after paying the cost
@@ -135,6 +162,9 @@ public class GameService {
         return unspentFood - leftoverFood;
     }
 
+    /**
+     * Finalizes playing a bird: commits food, removes eggs, moves the bird from hand to habitat, and ends the turn.
+     */
     public void confirmPlayBird(Game currentGame, Player currentPlayer, BirdCard birdToPlay, HabitatEnum habitatEnum, List<BirdCard> birdsToRemoveEggsFrom, int eggsToRemove) {
         // Process the food
         currentPlayer.getHand().confirmSpentFood();
@@ -155,6 +185,7 @@ public class GameService {
         endTurn(currentGame, currentPlayer);
     }
 
+    /** Announces the egg-laying result and ends the player's turn. */
     public void confirmLayEggs(Game currentGame, Player currentPlayer, int totalEggs) {
         currentGame.getGameChannel().sendMessage(
                 currentPlayer.getUser().getAsMention() + " laid " + totalEggs + " egg" + (totalEggs != 1 ? "s" : "")
@@ -163,6 +194,9 @@ public class GameService {
         endTurn(currentGame, currentPlayer);
     }
 
+    /**
+     * Ends the current player's turn, advances to the next player, and starts their turn.
+     */
     public void endTurn(Game currentGame, Player currentPlayer) {
         logger.info("Ending turn for player " + currentPlayer.getUser().getName());
         PlayerStateMachine.transition(currentPlayer, PlayerState.WAITING_FOR_TURN);
@@ -180,6 +214,7 @@ public class GameService {
         };
     }
 
+    /** Announces the card-drawing result and ends the player's turn. */
     public void confirmDrawCards(Game currentGame, Player currentPlayer, int totalCards) {
         currentGame.getGameChannel().sendMessage(
                 currentPlayer.getUser().getAsMention() + " drew " + totalCards + " card" + (totalCards != 1 ? "s" : "")

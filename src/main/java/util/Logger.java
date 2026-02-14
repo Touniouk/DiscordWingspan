@@ -3,6 +3,10 @@ package util;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Coloured console logger with configurable log levels. Messages below the
+ * configured level are suppressed.
+ */
 public class Logger {
 
     private LogLevel logging;
@@ -24,6 +28,9 @@ public class Logger {
         logging = newLogLevel;
     }
 
+    /**
+     * Logs a message if its level is at or below the configured log level.
+     */
     public void log(LogLevel messageLevel, String logMessage) {
         if (messageLevel.getLevel() > logging.getLevel()) {
             return;

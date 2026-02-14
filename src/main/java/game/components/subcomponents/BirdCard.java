@@ -10,6 +10,11 @@ import lombok.Setter;
 
 import java.util.List;
 
+/**
+ * Represents a bird card with its stats: food cost, habitats, nest, wingspan, power, and victory points.
+ * The {@code foodCost} field is a list of alternative costs (outer list) where each alternative
+ * is a list of required food types -- multiple alternatives represent "/" (or) costs.
+ */
 @Getter
 @Setter
 public class BirdCard extends Card {

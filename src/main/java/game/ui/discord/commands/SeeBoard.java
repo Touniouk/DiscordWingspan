@@ -18,6 +18,10 @@ import util.StringUtil;
 
 import java.util.Optional;
 
+/**
+ * Slash command: {@code /see_board} - Shows a player's board with played birds, food, and hand.
+ * Can optionally show another player's board (with hidden info redacted).
+ */
 public class SeeBoard implements SlashCommand {
 
     private static final String name = "see_board";

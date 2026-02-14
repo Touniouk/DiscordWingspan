@@ -2,6 +2,10 @@ package game.ui.discord.enumeration;
 
 import game.components.enums.FoodType;
 
+/**
+ * Identifiers for Discord UI components (buttons, select menus).
+ * Used as the prefix of component IDs in the format {@code ENUM_NAME:gameId}.
+ */
 public enum DiscordObject {
     PICK_STARTING_HAND_BIRD_SELECT_MENU,
     PICK_STARTING_HAND_BONUS_SELECT_MENU,

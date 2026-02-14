@@ -17,6 +17,10 @@ import util.Logger;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Singleton service bridging Discord interactions and game logic.
+ * Provides utilities to resolve game context from interaction events.
+ */
 public class DiscordBotService {
 
     // Logger
@@ -40,6 +44,11 @@ public class DiscordBotService {
         gameChannel.sendMessage(message).queue();
     }
 
+    /**
+     * Looks up a game by ID and verifies the interacting user is a participant.
+     *
+     * @throws GameInputException if the game doesn't exist or the user isn't in it
+     */
     public Game getGameFromId(GenericInteractionCreateEvent event, String gameId) throws GameInputException {
         Game currentGame = GameService.getInstance().getGame(gameId);
         if (currentGame == null) {
@@ -50,8 +59,14 @@ public class DiscordBotService {
         return currentGame;
     }
 
+    /** Holds resolved context from a Discord interaction: the game, player, and component metadata. */
     public record GameContext(String componentId, String gameId, Game game, Player player) {}
 
+    /**
+     * Resolves the game context from a slash command event, replying with an error if resolution fails.
+     *
+     * @return the resolved context, or empty if the game/player could not be found
+     */
     public static Optional<GameContext> resolveGameContext(SlashCommandInteractionEvent event) {
         String gameId;
         Game currentGame;
@@ -67,6 +82,12 @@ public class DiscordBotService {
         }
     }
 
+    /**
+     * Resolves the game context from a component interaction event (button/select menu).
+     * Parses the component ID to extract the game ID.
+     *
+     * @return the resolved context, or empty if the game/player could not be found
+     */
     public static Optional<GameContext> resolveGameContext(GenericComponentInteractionCreateEvent event) {
         String[] arr = event.getComponentId().split(":");
         String componentId = arr[0];

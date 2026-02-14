@@ -9,6 +9,9 @@ import util.StringUtil;
 
 import java.util.List;
 
+/**
+ * Slash command: {@code /get_active_games} - Lists the user's currently active games.
+ */
 public class GetActiveGames implements SlashCommand {
 
     private static final String name = "get_active_games";

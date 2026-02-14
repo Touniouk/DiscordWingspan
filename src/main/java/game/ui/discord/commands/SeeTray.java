@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Slash command: {@code /see_tray} - Displays the 3 face-up birds in the bird tray with their details.
+ */
 public class SeeTray implements SlashCommand {
 
     private static final String name = "see_tray";

@@ -7,6 +7,9 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * The three habitats on a player's board: forest, grassland, and wetland.
+ */
 public enum HabitatEnum {
     FOREST("Forest", EmojiEnum.FOREST),
     GRASSLAND("Grassland", EmojiEnum.GRASSLAND),

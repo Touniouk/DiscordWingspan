@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * The food types used to pay bird costs and found in the birdfeeder.
+ */
 public enum FoodType {
     WORM("Invertebrate", "Worm", EmojiEnum.WORM),
     SEED("Seed", "Seed", EmojiEnum.SEED),
@@ -54,6 +57,7 @@ public enum FoodType {
         return displayNameMap.get(displayName);
     }
 
+    /** Returns the food types available for starting hand selection (excludes nectar and wild). */
     public static List<FoodType> getStartingHandFoodTypes() {
         return List.of(WORM, SEED, FRUIT, FISH, RODENT);
     }

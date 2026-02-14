@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Represents a player's board with three habitats: forest, grassland, and wetland.
+ */
 public class Board {
     private final Forest forest;
     private final Grassland grassland;
@@ -41,6 +44,9 @@ public class Board {
         return wetland;
     }
 
+    /**
+     * Returns the habitat matching the given enum.
+     */
     public Habitat getHabitat(HabitatEnum habitatEnum) {
         return switch (habitatEnum) {
             case FOREST -> forest;
@@ -49,12 +55,18 @@ public class Board {
         };
     }
 
+    /**
+     * Returns all birds played across all three habitats.
+     */
     public List<BirdCard> getPlayedBirds() {
         return Stream.of(forest.getBirds(), grassland.getBirds(), wetland.getBirds())
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns all played birds that currently have at least one egg on them.
+     */
     public List<BirdCard> getPlayedBirdsWithEggs() {
         return Stream.of(forest.getBirds(), grassland.getBirds(), wetland.getBirds())
                 .flatMap(Collection::stream)

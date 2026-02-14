@@ -5,6 +5,12 @@ import game.components.subcomponents.Card;
 
 import java.util.*;
 
+/**
+ * Generic card deck with draw and discard piles. When the draw pile is exhausted,
+ * the discard pile is shuffled back in.
+ *
+ * @param <T> the card type
+ */
 public abstract class CardDeck<T extends Card> {
     private final Random random = new Random(Game.GAME_SEED);
     private Deque<T> drawDeck;
@@ -15,6 +21,12 @@ public abstract class CardDeck<T extends Card> {
         discardDeck = new ArrayDeque<>();
     }
 
+    /**
+     * Draws the top card from the deck. If the draw pile is empty, shuffles the discard pile back in.
+     *
+     * @return the drawn card
+     * @throws ArrayIndexOutOfBoundsException if both piles are empty
+     */
     public T drawCard() {
         if (drawDeck.size() == 0) {
             if (discardDeck.size() > 0) {
@@ -26,10 +38,12 @@ public abstract class CardDeck<T extends Card> {
         return drawDeck.poll();
     }
 
+    /** Places a card into the discard pile. */
     public void discard(T card) {
         discardDeck.addLast(card);
     }
 
+    /** Shuffles the discard pile back into the draw pile. */
     public void shuffleDeck() {
         shuffleDiscard();
     }

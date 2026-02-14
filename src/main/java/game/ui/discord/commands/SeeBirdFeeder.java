@@ -16,6 +16,9 @@ import util.StringUtil;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Slash command: {@code /see_bird_feeder} - Displays the current state of the birdfeeder dice.
+ */
 public class SeeBirdFeeder implements SlashCommand {
 
     private static final String name = "see_bird_feeder";

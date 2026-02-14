@@ -7,6 +7,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Bird card deck with a face-up tray of 3 birds that players can pick from.
+ */
 public class BirdDeck extends CardDeck<BirdCard> {
 
     @Getter
@@ -18,6 +21,7 @@ public class BirdDeck extends CardDeck<BirdCard> {
         refillTray();
     }
 
+    /** Fills empty tray slots by drawing from the deck. */
     public void refillTray() {
         for (int i = 0; i < tray.length; i++) {
             if (tray[i] == null) {
@@ -26,6 +30,12 @@ public class BirdDeck extends CardDeck<BirdCard> {
         }
     }
 
+    /**
+     * Removes birds from the tray at the given indices and replaces them with new draws.
+     *
+     * @param indexes tray positions to take from
+     * @return the birds that were removed
+     */
     public List<BirdCard> getTrayBirds(List<Integer> indexes) {
         List<BirdCard> birds = new ArrayList<>();
         for (int index : indexes) {

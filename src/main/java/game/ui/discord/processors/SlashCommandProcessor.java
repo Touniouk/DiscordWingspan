@@ -13,6 +13,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Routes incoming slash command events to the appropriate {@link SlashCommand} implementation.
+ * All slash commands must be registered in the static initializer.
+ */
 public class SlashCommandProcessor {
 
     private static final Map<String, SlashCommand> slashCommandList;
@@ -41,6 +45,7 @@ public class SlashCommandProcessor {
         slashCommandList.get(event.getName()).handleAutoComplete(event);
     }
 
+    /** Returns the command data for all registered slash commands, used for guild registration. */
     public static List<CommandData> getCommandsData() {
         return slashCommandList.values().stream().map(SlashCommand::getCommandData).collect(Collectors.toList());
     }

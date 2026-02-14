@@ -4,6 +4,9 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Wingspan game expansions and promo packs. Used to filter cards by expansion during game setup.
+ */
 public enum Expansion {
     BASE("Base Game", "originalcore"),
     SWIFT_START("Swift Start", "swiftstart"),

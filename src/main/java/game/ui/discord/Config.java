@@ -4,6 +4,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+/**
+ * Loads and provides access to configuration properties from {@code config.properties}.
+ */
 public class Config {
     private static final Properties props = new Properties();
 

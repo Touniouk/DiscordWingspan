@@ -20,6 +20,10 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import java.util.Arrays;
 import java.util.Optional;
 
+/**
+ * Slash command: {@code /take_turn} - Initiates a player's turn by presenting the action selection menu
+ * (play bird, gain food, lay eggs, draw cards).
+ */
 public class TakeTurn implements SlashCommand {
 
     private static final String name = "take_turn";

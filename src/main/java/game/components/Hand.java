@@ -10,6 +10,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Represents a player's hand: bird cards, bonus cards, food pantry, and temporary state
+ * used during turn actions (food spending, egg laying, card drawing).
+ */
 @Getter
 public class Hand {
     private final List<BirdCard> birdCards;
@@ -41,6 +45,10 @@ public class Hand {
         this.bonusCards.add(bonusCard);
     }
 
+    /**
+     * Resets the temporary food-spending state, clearing spent food and
+     * restoring available food to match the current pantry.
+     */
     public void resetTempPantry() {
         tempPantrySpentFood.forEach((k, v) -> tempPantrySpentFood.put(k, 0));
         pantry.forEach((k, v) -> tempPantryAvailableFood.put(k, pantry.get(k)));
@@ -54,10 +62,19 @@ public class Hand {
         pantry.forEach((k, v) -> pantry.put(k, 0));
     }
 
+    /**
+     * Finds a bird card in hand by its common name.
+     *
+     * @param birdName the bird's common name
+     * @return the matching bird card, or empty if not in hand
+     */
     public Optional<BirdCard> getBirdByName(@NonNull String birdName) {
         return birdCards.stream().filter(bird -> birdName.equals(bird.getName())).findAny();
     }
 
+    /**
+     * Commits the temporary food spending to the actual pantry.
+     */
     public void confirmSpentFood() {
         tempPantryAvailableFood.forEach((k, v) -> pantry.put(k, tempPantryAvailableFood.get(k)));
         resetTempPantry();
@@ -67,10 +84,16 @@ public class Hand {
         tempEggsToLay.clear();
     }
 
+    /**
+     * Adds one temporary egg to a bird (pending confirmation via {@link #confirmLayEggs()}).
+     */
     public void addTempEgg(BirdCard bird) {
         tempEggsToLay.merge(bird, 1, Integer::sum);
     }
 
+    /**
+     * Removes one temporary egg from a bird. If the bird has no temp eggs, it is removed from the map.
+     */
     public void removeTempEgg(BirdCard bird) {
         int current = tempEggsToLay.getOrDefault(bird, 0);
         if (current <= 1) {
@@ -88,6 +111,9 @@ public class Hand {
         return tempEggsToLay.values().stream().mapToInt(Integer::intValue).sum();
     }
 
+    /**
+     * Commits all temporary eggs to their respective bird nests and clears the temp state.
+     */
     public void confirmLayEggs() {
         tempEggsToLay.forEach((bird, count) ->
                 bird.getNest().setNumberOfEggs(bird.getNest().getNumberOfEggs() + count));

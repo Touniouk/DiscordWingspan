@@ -24,6 +24,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Slash command: {@code /pick_starting_hand} - Displays the starting hand picker UI
+ * where players select their initial birds, food, and bonus card.
+ */
 public class PickStartingHand implements SlashCommand {
     private static final String name = "pick_starting_hand";
     private static final String description = "Pick your starting hand";

@@ -133,6 +133,12 @@ public class Game {
         GameStateMachine.transition(this, GameState.STARTING_HANDS_SENT);
     }
 
+    /**
+     * Confirms a player's starting hand, discards unselected birds and bonuses back to their decks,
+     * and transitions the game to GAME_STARTED.
+     *
+     * @throws GameInputException if the player's selection is invalid
+     */
     public void confirmStartingHandPick(long userId) throws GameInputException {
         Player player = getPlayerById(userId);
         player.confirmStartingHandPick();
@@ -245,23 +251,32 @@ public class Game {
     // STATIC MEMBERS
     //*****************************************************************
 
+    /** Finds a bird card by its ID from the full card list. */
     public BirdCard getBirdCardById(int birdId) {
         return birdCards.stream().filter(b -> b.getId() == birdId).findAny().orElseThrow(IllegalArgumentException::new);
     }
 
+    /** Finds a bonus card by its ID from the full card list. */
     public BonusCard getBonusCardById(int bonusId) {
         return bonusCards.stream().filter(b -> b.getId() == bonusId).findAny().orElseThrow(IllegalArgumentException::new);
     }
 
+    /**
+     * Finds a player in this game by their Discord user ID.
+     *
+     * @throws GameInputException if no player with that ID exists in this game
+     */
     public Player getPlayerById(long userId) throws GameInputException {
         return this.players.stream().filter(p -> p.getUser().getIdLong() == userId).findAny()
                 .orElseThrow(() -> new GameInputException("This userId is not part of game `" + gameId + "`"));
     }
 
+    /** Returns true if every player has confirmed their starting hand. */
     public boolean allPlayersReady() {
         return players.stream().allMatch(p -> p.getState() == PlayerState.READY);
     }
 
+    /** Advances to the next player, incrementing the turn counter when wrapping around. */
     public void advanceTurn() {
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
         if (currentPlayerIndex == 0) {

@@ -34,6 +34,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Routes incoming string select menu interactions to the appropriate handler
+ * based on the component ID (starting hand selection, turn actions, bird placement, etc.).
+ */
 public class StringSelectInteractionProcessor {
 
     private static final Logger logger = new Logger(StringSelectInteractionProcessor.class, LogLevel.ALL);
@@ -233,6 +237,9 @@ public class StringSelectInteractionProcessor {
                 .queue();
     }
 
+    /**
+     * Builds the add/remove food button rows and submit button for food selection during bird placement.
+     */
     public static List<ActionRow> getChooseFoodSelector(Game currentGame, Player currentPlayer) {
         List<Button> addFoodButtons = new ArrayList<>();
         List<Button> removeFoodButtons = new ArrayList<>();
@@ -329,6 +336,10 @@ public class StringSelectInteractionProcessor {
                 .queue();
     }
 
+    /**
+     * Rebuilds the message components, enabling the submit button only when all three
+     * starting hand categories (birds, food, bonus) have been selected.
+     */
     public static List<ActionRow> getNewComponents(Message message, MessageEmbed newEmbed, String buttonId) {
         return message.getActionRows().stream()
                 .map(row -> ActionRow.of(

@@ -7,6 +7,9 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * The types of bird nests. Star nests are wild and match any nest type for bonus cards.
+ */
 public enum NestType {
     STAR("Star", "Wild", EmojiEnum.STAR),
     CUP("Cup", "Bowl", EmojiEnum.STAR),

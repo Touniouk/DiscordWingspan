@@ -18,6 +18,10 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import util.LogLevel;
 import util.Logger;
 
+/**
+ * Main Discord bot entry point. Registers slash commands and routes incoming
+ * interactions (messages, buttons, select menus) to their respective processors.
+ */
 public class DiscordBot extends ListenerAdapter {
 
     public static final String BOT_TOKEN = Config.get("bot.token");

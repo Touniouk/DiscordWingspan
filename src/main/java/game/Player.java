@@ -15,6 +15,9 @@ import net.dv8tion.jda.api.entities.User;
 import util.LogLevel;
 import util.Logger;
 
+/**
+ * Represents a player in the game, holding their Discord user, board, hand, and current state.
+ */
 @Getter
 @Setter
 public class Player {
@@ -26,6 +29,10 @@ public class Player {
 
     private final Logger logger = new Logger(Player.class, LogLevel.ALL);
 
+    /**
+     * @param user       the Discord user this player represents
+     * @param withNectar whether to use the Oceania nectar board variant
+     */
     public Player(User user, boolean withNectar) {
         this.state = PlayerState.WAITING_FOR_STARTING_HAND;
         this.user = user;
@@ -42,6 +49,13 @@ public class Player {
         this.hand.addBonus(bonusCard);
     }
 
+    /**
+     * Validates and confirms the player's starting hand selection.
+     * Ensures the player hasn't selected more than 5 birds + food or more than 1 bonus card,
+     * then transitions the player to the READY state.
+     *
+     * @throws GameInputException if too many resources or bonus cards are selected
+     */
     public void confirmStartingHandPick() throws GameInputException {
         // Check that we didn't select too much
         int foodSelected = hand.getPantry().values().stream().mapToInt(Integer::intValue).sum();
