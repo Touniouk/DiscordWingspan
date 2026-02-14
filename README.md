@@ -58,6 +58,20 @@ A Discord bot that lets you play the [Wingspan](https://stonemaiergames.com/game
    mvn compile exec:java -Dexec.mainClass="game.ui.discord.DiscordBot"
    ```
 
+### Regenerating Bird Data
+
+The bird card database (`birds.json`) is generated from a Wingspan Excel spreadsheet. To regenerate it:
+
+```bash
+cd scripts
+python3 -m venv .venv
+source .venv/bin/activate
+pip install openpyxl
+python3 generate_birds_json.py
+```
+
+The script reads `src/main/resources/wingspan-20260128.xlsx` and writes `src/main/resources/birds.json`.
+
 ### Running Tests
 
 ```bash
