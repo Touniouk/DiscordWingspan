@@ -188,7 +188,6 @@ public class Game {
             while (iter.hasNext()) {
                 JsonNode birdNode = iter.next();
                 BirdCard birdCard = new BirdCard();
-                birdCard.setId(birdNode.get("id").asInt());
                 birdCard.setName(birdNode.get("Common name").asText());
                 birdCard.setScientificName(birdNode.get("Scientific name").asText());
                 birdCard.setExpansion(Expansion.fromJsonName(birdNode.get("Expansion").asText()));
@@ -224,8 +223,6 @@ public class Game {
                 birdCard.setLanguageBonusCards(Stream.of("Anatomist", "Cartographer", "Historian", "Photographer")
                         .filter(s -> birdNode.get(s).asText().equals("X"))
                         .collect(Collectors.toList()));
-                birdCard.setFacingLeft(birdNode.get("Beak Pointing Left").asText().equals("X"));
-                birdCard.setFacingRight(birdNode.get("Beak Pointing Right").asText().equals("X"));
                 birdCards.add(birdCard);
             }
         } catch (IOException e) {
