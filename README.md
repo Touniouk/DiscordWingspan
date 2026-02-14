@@ -2,24 +2,7 @@
 
 A Discord bot that lets you play the [Wingspan](https://stonemaiergames.com/games/wingspan/) board game with friends, right inside a Discord server. Create games, draft starting hands, place birds on your board, and compete for the highest score — all through slash commands and interactive buttons.
 
-> **Status:** In development. Game creation, starting hand drafting, board and feeder display all functional. Basic actions (Play bird, Gain food, Lay eggs, Draw cards) are still in progress.
-
-## TODO
-
-- [x] Implement playing bird
-   - [x] Disable +- buttons when spending food
-   - [ ] If bird can only go in one habitat, add it automatically
-- [x] Implement gaining food
-- [x] Implement laying eggs
-- [x] Implement drawing cards
-- [ ] Implement resource discard on basic actions
-- [ ] Implement brown powers
-- [ ] Implement white powers
-- [ ] Implement pink powers
-- [ ] Implement end of rounds
-- [ ] Implement bonus card scoring
-- [ ] Playing with nectar
-- [ ] Nectar scoring
+> **Status:** In development. Game creation, starting hand drafting, board/feeder/tray display, and basic actions (Play bird, Gain food, Lay eggs, Draw cards) all functional. Bird powers, end-of-round scoring, and nectar are still in progress.
 
 ### Slash Commands
 
@@ -27,9 +10,10 @@ A Discord bot that lets you play the [Wingspan](https://stonemaiergames.com/game
 |-----------------------|------------------------------------------------|
 | `/create_game`        | Create a new game and invite players           |
 | `/pick_starting_hand` | Choose your bird, bonus and food to start with |
-| `/take_turn`          | Take your turn (Gain Food, Play Bird)          |
+| `/take_turn`          | Take your turn (Play Bird, Gain Food, Lay Eggs, Draw Cards) |
 | `/see_board`          | View a player's board                          |
 | `/see_bird_feeder`    | View the birdfeeder dice                       |
+| `/see_tray`           | View the 3 birds available in the tray         |
 | `/get_active_games`   | List your ongoing games                        |
 
 ## Tech Stack
@@ -91,6 +75,7 @@ src/main/java/
       enums/                   # FoodType, Habitat, NestType, etc.
       subcomponents/           # BirdCard, BonusCard, Die
       meta/                    # Habitat impls, Power, Nest
+    exception/                 # GameInputException
     service/                   # GameService, state machines
     ui/discord/                # Discord bot, slash commands, processors
   util/                        # Logger, StringUtil
@@ -101,6 +86,23 @@ src/main/resources/
   goals.json                   # End-of-round goal cards
   asset/png/                   # Food, habitat, and card images
 ```
+
+## TODO
+
+- [x] Implement playing bird
+    - [x] Disable +- buttons when spending food
+    - [ ] If bird can only go in one habitat, add it automatically
+- [x] Implement gaining food
+- [x] Implement laying eggs
+- [x] Implement drawing cards
+- [ ] Implement resource discard on basic actions
+- [ ] Implement brown powers
+- [ ] Implement white powers
+- [ ] Implement pink powers
+- [ ] Implement end of rounds
+- [ ] Implement bonus card scoring
+- [ ] Playing with nectar
+- [ ] Nectar scoring
 
 ## License
 
