@@ -29,11 +29,17 @@ import util.Logger;
 import util.StringUtil;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+/**
+ * Routes incoming button interactions to the appropriate handler based on the component ID.
+ * Handles play-bird food selection, gain-food die picking, egg laying, and card drawing flows.
+ */
 public class ButtonInteractionProcessor {
 
     private static final Logger logger = new Logger(ButtonInteractionProcessor.class, LogLevel.ALL);
@@ -806,7 +812,7 @@ public class ButtonInteractionProcessor {
                 drawnBirds;
 
         Button submitButton = Button.success(DiscordObject.TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_SUBMIT + ":" + game.getGameId(), Constants.SUBMIT_SELECTION);
-        List<ActionRow> components = List.of(ActionRow.of(drawTrayButtons), ActionRow.of(drawDeckButton), ActionRow.of(submitButton));
+        List<ActionRow> components = List.of(ActionRow.of(Stream.concat(Stream.of(drawDeckButton), drawTrayButtons.stream()).toList()), ActionRow.of(submitButton));
         return new DrawCardsMessage(message, components);
     }
 
@@ -820,43 +826,39 @@ public class ButtonInteractionProcessor {
         int maxDraw = parseMaxDrawMessage(messageContent);
 
         // Toggle the clicked button
-        List<ItemComponent> newTrayButtons = new ArrayList<>();
-        int selectedCount = player.getHand().getTempDrawnBirds().size();
-        for (ItemComponent component : drawTray.getComponents()) {
-            if (component instanceof Button button) {
-                boolean isClicked = clickedId.equals(button.getId());
-                ButtonStyle currentStyle = button.getStyle();
-                if (isClicked) {
-                    ButtonStyle newStyle = (currentStyle == ButtonStyle.SUCCESS) ? ButtonStyle.SECONDARY : ButtonStyle.SUCCESS;
-                    Button newButton = (newStyle == ButtonStyle.SUCCESS)
-                            ? Button.success(button.getId(), button.getLabel())
-                            : Button.secondary(button.getId(), button.getLabel());
-                    if (button.getEmoji() != null) {
-                        newButton = newButton.withEmoji(button.getEmoji());
+        List<Button> newTrayButtons = new ArrayList<>();
+        AtomicInteger selectedCount = new AtomicInteger(player.getHand().getTempDrawnBirds().size());
+        drawTray.getComponents().stream()
+                .filter(component -> component instanceof Button)
+                .map(component -> (Button) component)
+                .filter(button -> !DiscordObject.TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_DRAW_DECK.name().equals(Objects.requireNonNull(button.getId()).split(":")[0]))
+                .forEach(button -> {
+                    boolean isClicked = clickedId.equals(button.getId());
+                    ButtonStyle currentStyle = button.getStyle();
+                    if (isClicked) {
+                        ButtonStyle newStyle = (currentStyle == ButtonStyle.SUCCESS) ? ButtonStyle.SECONDARY : ButtonStyle.SUCCESS;
+                        Button newButton = (newStyle == ButtonStyle.SUCCESS)
+                                ? Button.success(button.getId(), button.getLabel())
+                                : Button.secondary(button.getId(), button.getLabel());
+                        if (button.getEmoji() != null) {
+                            newButton = newButton.withEmoji(button.getEmoji());
+                        }
+                        newTrayButtons.add(newButton);
+                        if (newStyle == ButtonStyle.SUCCESS) selectedCount.getAndIncrement();
+                    } else {
+                        newTrayButtons.add(button);
+                        if (currentStyle == ButtonStyle.SUCCESS) selectedCount.getAndIncrement();
                     }
-                    newTrayButtons.add(newButton);
-                    if (newStyle == ButtonStyle.SUCCESS) selectedCount++;
-                } else {
-                    newTrayButtons.add(button);
-                    if (currentStyle == ButtonStyle.SUCCESS) selectedCount++;
-                }
-            }
-        }
+                });
 
         // If at max: disable unselected buttons; otherwise enable all
         List<Button> finalTrayButtons = new ArrayList<>();
-        for (ItemComponent component : newTrayButtons) {
-            if (component instanceof Button button) {
-                if (selectedCount >= maxDraw && button.getStyle() == ButtonStyle.SECONDARY) {
-                    finalTrayButtons.add(button.asDisabled());
-                } else {
-                    finalTrayButtons.add(button.asEnabled());
-                }
-            }
-        }
+        newTrayButtons.stream()
+                .filter(button -> !DiscordObject.TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_DRAW_DECK.name().equals(Objects.requireNonNull(button.getId()).split(":")[0]))
+                .forEach(button -> finalTrayButtons.add(button.withDisabled(selectedCount.get() >= maxDraw && button.getStyle() == ButtonStyle.SECONDARY)));
 
         // Build the response
-        ButtonInteractionProcessor.DrawCardsMessage msg = ButtonInteractionProcessor.buildDrawCardsMessage(game, player, maxDraw, selectedCount, finalTrayButtons);
+        ButtonInteractionProcessor.DrawCardsMessage msg = ButtonInteractionProcessor.buildDrawCardsMessage(game, player, maxDraw, selectedCount.get(), finalTrayButtons);
         event.editMessage(msg.content())
                 .setComponents(msg.components())
                 .queue();
@@ -865,7 +867,6 @@ public class ButtonInteractionProcessor {
     private static void drawCardFromDeck(ButtonInteractionEvent event, Game game, Player player) {
         List<ActionRow> oldRows = event.getMessage().getActionRows();
         ActionRow drawTray = oldRows.get(0);
-        ActionRow drawDeck = oldRows.get(1);
 
         // Draw card from deck
         player.getHand().getTempDrawnBirds().add(game.getBirdDeck().drawCard());
@@ -882,15 +883,12 @@ public class ButtonInteractionProcessor {
 
         // If at max: disable unselected buttons; otherwise enable all
         List<Button> finalTrayButtons = new ArrayList<>();
-        for (ItemComponent component : drawTray.getComponents()) {
-            if (component instanceof Button button) {
-                if (selectedCount >= maxDraw && button.getStyle() == ButtonStyle.SECONDARY) {
-                    finalTrayButtons.add(button.asDisabled());
-                } else {
-                    finalTrayButtons.add(button.asEnabled());
-                }
-            }
-        }
+        int finalSelectedCount = selectedCount;
+        drawTray.getComponents().stream()
+                .filter(component -> component instanceof Button)
+                .map(component -> (Button) component)
+                .filter(button -> !DiscordObject.TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_DRAW_DECK.name().equals(Objects.requireNonNull(button.getId()).split(":")[0]))
+                .forEach(button -> finalTrayButtons.add(button.withDisabled(finalSelectedCount >= maxDraw && button.getStyle() == ButtonStyle.SECONDARY)));
 
         // Build the response
         ButtonInteractionProcessor.DrawCardsMessage msg = ButtonInteractionProcessor.buildDrawCardsMessage(game, player, maxDraw, selectedCount, finalTrayButtons);
@@ -912,7 +910,7 @@ public class ButtonInteractionProcessor {
 
         int drawnCards = game.confirmDrawBirdSelection(player, selectedTrayIndexes);
 
-        String drawnBirds = "Drew **" + drawnCards + " cards\n";
+        String drawnBirds = "Drew **" + drawnCards + "** card" + (drawnCards == 1 ? "" : "s") + "\n";
         String message = Constants.PICK_ACTION + BoardAction.DRAW_CARDS.getLabel() + "\n\n" +
                 drawnBirds;
         event.editMessage(message)

@@ -89,7 +89,7 @@ public class CreateGame implements SlashCommand {
                         .getPlayers().stream()
                         .map(p -> p.getUser().getAsMention())
                         .toList(), "");
-        event.reply("Game `" + gameId + "` created with " + playersAsMention)
+        event.reply("Game `" + gameId + "` created with " + playersAsMention + "\n")
                 .addActionRow(takeTurnButton, seeFeederButton, seeTrayButton)
                 .queue();
     }
