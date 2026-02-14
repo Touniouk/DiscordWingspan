@@ -188,7 +188,6 @@ public class Game {
             while (iter.hasNext()) {
                 JsonNode birdNode = iter.next();
                 BirdCard birdCard = new BirdCard();
-                birdCard.setId(birdNode.get("id").asInt());
                 birdCard.setName(birdNode.get("Common name").asText());
                 birdCard.setScientificName(birdNode.get("Scientific name").asText());
                 birdCard.setExpansion(Expansion.fromJsonName(birdNode.get("Expansion").asText()));
@@ -224,13 +223,22 @@ public class Game {
                 birdCard.setLanguageBonusCards(Stream.of("Anatomist", "Cartographer", "Historian", "Photographer")
                         .filter(s -> birdNode.get(s).asText().equals("X"))
                         .collect(Collectors.toList()));
-                birdCard.setFacingLeft(birdNode.get("Beak Pointing Left").asText().equals("X"));
-                birdCard.setFacingRight(birdNode.get("Beak Pointing Right").asText().equals("X"));
                 birdCards.add(birdCard);
             }
         } catch (IOException e) {
             logger.error(String.format("Couldn't get all bird cards : %s", e.getMessage()));
         }
+    }
+
+    /**
+     * Confirm the selection of drawn birds. This includes the selected tray birds as well as the birds drawn from the deck
+     */
+    public int confirmDrawBirdSelection(Player player, List<Integer> selectedTrayIndexes) {
+        int drawnCards = player.getHand().getTempDrawnBirds().size() + selectedTrayIndexes.size();
+        player.getHand().getBirdCards().addAll(player.getHand().getTempDrawnBirds());
+        player.getHand().getBirdCards().addAll(this.getBirdDeck().getTrayBirds(selectedTrayIndexes));
+        player.getHand().getTempDrawnBirds().clear();
+        return drawnCards;
     }
 
     //*****************************************************************
@@ -245,11 +253,23 @@ public class Game {
         return bonusCards.stream().filter(b -> b.getId() == bonusId).findAny().orElseThrow(IllegalArgumentException::new);
     }
 
-    public Player getPlayerById(long userId) {
-        return this.players.stream().filter(p -> p.getUser().getIdLong() == userId).findAny().orElse(null);
+    public Player getPlayerById(long userId) throws GameInputException {
+        return this.players.stream().filter(p -> p.getUser().getIdLong() == userId).findAny()
+                .orElseThrow(() -> new GameInputException("This userId is not part of game `" + gameId + "`"));
     }
 
     public boolean allPlayersReady() {
         return players.stream().allMatch(p -> p.getState() == PlayerState.READY);
+    }
+
+    public void advanceTurn() {
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        if (currentPlayerIndex == 0) {
+            turnCounter++;
+        }
+    }
+
+    public Player getCurrentPlayer() {
+        return players.get(currentPlayerIndex);
     }
 }

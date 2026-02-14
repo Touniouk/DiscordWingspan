@@ -9,7 +9,14 @@ public enum Expansion {
     SWIFT_START("Swift Start", "swiftstart"),
     EUROPE("Europe", "european"),
     OCEANIA("Oceania", "oceania"),
-    ASIA("Asia", "asia");
+    ASIA("Asia", "asia"),
+    AMERICAS("Americas", "americas"),
+    PROMO_ASIA("Promo Asia", "promoAsia"),
+    PROMO_CA("Promo CA", "promoCA"),
+    PROMO_EUROPE("Promo Europe", "promoEurope"),
+    PROMO_NZ("Promo NZ", "promoNZ"),
+    PROMO_UK("Promo UK", "promoUK"),
+    PROMO_US("Promo US", "promoUS");
 
     private final String label;
     private final String jsonName;

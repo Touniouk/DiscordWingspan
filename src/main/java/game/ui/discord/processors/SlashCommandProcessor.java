@@ -4,6 +4,7 @@ import game.ui.discord.commands.*;
 import game.ui.discord.commands.example.ExampleEmbed;
 import game.ui.discord.commands.example.ExampleModal;
 import game.ui.discord.commands.example.ExampleSelectMenu;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 
@@ -23,14 +24,21 @@ public class SlashCommandProcessor {
                 new ExampleEmbed(),
                 new ExampleSelectMenu(),
                 new CreateGame(),
+                new PickStartingHand(),
                 new TakeTurn(),
                 new GetActiveGames(),
-                new SeeBoard()
+                new SeeBoard(),
+                new SeeBirdFeeder(),
+                new SeeTray()
         ).collect(Collectors.toMap(SlashCommand::getName, c -> c));
     }
 
     public static void handleCommand(SlashCommandInteractionEvent event) {
         slashCommandList.get(event.getName()).handle(event);
+    }
+
+    public static void handleAutoComplete(CommandAutoCompleteInteractionEvent event) {
+        slashCommandList.get(event.getName()).handleAutoComplete(event);
     }
 
     public static List<CommandData> getCommandsData() {

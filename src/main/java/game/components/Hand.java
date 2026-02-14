@@ -6,10 +6,7 @@ import game.components.subcomponents.BonusCard;
 import lombok.Getter;
 import lombok.NonNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -20,16 +17,20 @@ public class Hand {
     private final Map<FoodType, Integer> pantry;
     private final Map<FoodType, Integer> tempPantrySpentFood;
     private final Map<FoodType, Integer> tempPantryAvailableFood;
+    private final Map<BirdCard, Integer> tempEggsToLay;
+    private final List<BirdCard> tempDrawnBirds;
 
     public Hand(boolean nectar) {
         this.birdCards = new ArrayList<>();
         this.bonusCards = new ArrayList<>();
-        this.pantry = Stream.of(FoodType.INVERTEBRATE, FoodType.SEED, FoodType.FRUIT, FoodType.RODENT, FoodType.FISH, FoodType.NECTAR)
+        this.pantry = Stream.of(FoodType.WORM, FoodType.SEED, FoodType.FRUIT, FoodType.RODENT, FoodType.FISH, FoodType.NECTAR)
                 .collect(Collectors.toMap(food -> food, food -> 0));
-        this.tempPantrySpentFood = Stream.of(FoodType.INVERTEBRATE, FoodType.SEED, FoodType.FRUIT, FoodType.RODENT, FoodType.FISH, FoodType.NECTAR)
+        this.tempPantrySpentFood = Stream.of(FoodType.WORM, FoodType.SEED, FoodType.FRUIT, FoodType.RODENT, FoodType.FISH, FoodType.NECTAR)
                 .collect(Collectors.toMap(food -> food, food -> 0));
-        this.tempPantryAvailableFood = Stream.of(FoodType.INVERTEBRATE, FoodType.SEED, FoodType.FRUIT, FoodType.RODENT, FoodType.FISH, FoodType.NECTAR)
+        this.tempPantryAvailableFood = Stream.of(FoodType.WORM, FoodType.SEED, FoodType.FRUIT, FoodType.RODENT, FoodType.FISH, FoodType.NECTAR)
                 .collect(Collectors.toMap(food -> food, food -> 0));
+        this.tempEggsToLay = new HashMap<>();
+        this.tempDrawnBirds = new ArrayList<>();
     }
 
     public void addBird(BirdCard birdCard) {
@@ -45,6 +46,10 @@ public class Hand {
         pantry.forEach((k, v) -> tempPantryAvailableFood.put(k, pantry.get(k)));
     }
 
+    public void resetTempDrawnBirds() {
+        tempDrawnBirds.clear();
+    }
+
     public void resetPantry() {
         pantry.forEach((k, v) -> pantry.put(k, 0));
     }
@@ -56,5 +61,36 @@ public class Hand {
     public void confirmSpentFood() {
         tempPantryAvailableFood.forEach((k, v) -> pantry.put(k, tempPantryAvailableFood.get(k)));
         resetTempPantry();
+    }
+
+    public void resetTempEggs() {
+        tempEggsToLay.clear();
+    }
+
+    public void addTempEgg(BirdCard bird) {
+        tempEggsToLay.merge(bird, 1, Integer::sum);
+    }
+
+    public void removeTempEgg(BirdCard bird) {
+        int current = tempEggsToLay.getOrDefault(bird, 0);
+        if (current <= 1) {
+            tempEggsToLay.remove(bird);
+        } else {
+            tempEggsToLay.put(bird, current - 1);
+        }
+    }
+
+    public int getTempEggsForBird(BirdCard bird) {
+        return tempEggsToLay.getOrDefault(bird, 0);
+    }
+
+    public int getTotalTempEggs() {
+        return tempEggsToLay.values().stream().mapToInt(Integer::intValue).sum();
+    }
+
+    public void confirmLayEggs() {
+        tempEggsToLay.forEach((bird, count) ->
+                bird.getNest().setNumberOfEggs(bird.getNest().getNumberOfEggs() + count));
+        resetTempEggs();
     }
 }

@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
@@ -52,6 +53,12 @@ public class DiscordBot extends ListenerAdapter {
     }
 
     @Override
+    public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent event) {
+        logger.io("onCommandAutoCompleteInteraction -> " + event.getName() + ":" + event.getFocusedOption().getName());
+        SlashCommandProcessor.handleAutoComplete(event);
+    }
+
+    @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
         logger.io("onButtonInteraction -> " + event.getInteraction().getButton().getLabel());
         ButtonInteractionProcessor.handleCommand(event);
@@ -59,7 +66,7 @@ public class DiscordBot extends ListenerAdapter {
 
     @Override
     public void onStringSelectInteraction(StringSelectInteractionEvent event) {
-        logger.io("onStringSelectInteraction -> " + event.getInteraction());
+        logger.io("onStringSelectInteraction -> " + event.getInteraction().getMessage());
         StringSelectInteractionProcessor.handleCommand(event);
     }
 

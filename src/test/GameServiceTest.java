@@ -120,12 +120,12 @@ class GameServiceTest {
     @Test
     void testMultipleFoodCostLists_oneMatchesExactly() {
         List<List<FoodType>> foodCosts = List.of(
-                List.of(FoodType.SEED, FoodType.INVERTEBRATE),
-                List.of(FoodType.FISH, FoodType.INVERTEBRATE)
+                List.of(FoodType.SEED, FoodType.WORM),
+                List.of(FoodType.FISH, FoodType.WORM)
         );
         Map<FoodType, Integer> spentFood = Map.of(
                 FoodType.FISH, 1,
-                FoodType.INVERTEBRATE, 1
+                FoodType.WORM, 1
         );
 
         int result = GameService.getInstance().checkFoodCost(foodCosts, spentFood);
@@ -135,7 +135,7 @@ class GameServiceTest {
     @Test
     void testMultipleFoodCostLists_noneMatches() {
         List<List<FoodType>> foodCosts = List.of(
-                List.of(FoodType.SEED, FoodType.INVERTEBRATE),
+                List.of(FoodType.SEED, FoodType.WORM),
                 List.of(FoodType.FISH, FoodType.SEED)
         );
         Map<FoodType, Integer> spentFood = Map.of(
@@ -157,7 +157,7 @@ class GameServiceTest {
 
     @Test
     void testEmptySpentFood() {
-        List<List<FoodType>> foodCosts = List.of(List.of(FoodType.SEED, FoodType.INVERTEBRATE));
+        List<List<FoodType>> foodCosts = List.of(List.of(FoodType.SEED, FoodType.WORM));
         Map<FoodType, Integer> spentFood = new HashMap<>();
 
         int result = GameService.getInstance().checkFoodCost(foodCosts, spentFood);

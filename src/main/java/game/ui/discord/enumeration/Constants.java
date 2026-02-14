@@ -1,6 +1,7 @@
 package game.ui.discord.enumeration;
 
 public class Constants {
+    public static final String GAME_ID = "game_id";
     public static final String SUBMIT_SELECTION = "✅ Submit Selection";
     public static final String BIRDS_NOT_SELECTED = "❌ Birds Selected";
     public static final String BIRDS_SELECTED = "✅ Birds Selected";
@@ -18,4 +19,9 @@ public class Constants {
     public static final String CHOOSE_HABITAT = "**\uD83C\uDF0D Pick a habitat to play the bird in: **";
     public static final String CHOOSE_BIRDS_TO_REMOVE_EGG = "**\uD83E\uDD5A Pick which birds to remove eggs from: **";
     public static final String SAME_AGAIN = "Same again";
+    public static final String NONE = "None";
+    public static final String CHOOSE_FOOD_FROM_FEEDER = "**\uD83C\uDFB2 Pick a food from the birdfeeder: **";
+    public static final String CHOOSE_EGGS_TO_LAY = "**\uD83E\uDD5A Lay eggs on your birds: **";
+    public static final String LAY_EGGS_REMAINING = "Eggs remaining: ";
+    public static final String DRAW_CARDS = "**" + EmojiEnum.CARD.getEmoteId() + " Draw cards: **";
 }

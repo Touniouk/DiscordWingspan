@@ -8,6 +8,7 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 .idea/
+/Wingspan.iml
 
 ### Eclipse ###
 .apt_generated
@@ -30,6 +31,14 @@ bin/
 
 ### VS Code ###
 .vscode/
+
+### Python ###
+scripts/.venv/
+__pycache__/
+*.pyc
+
+### Claude ###
+.claude/
 
 ### Mac OS ###
 .DS_Store

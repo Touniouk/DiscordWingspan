@@ -4,12 +4,13 @@ import game.Game;
 import game.Player;
 import game.components.enums.FoodType;
 import game.components.enums.HabitatEnum;
-import game.components.meta.Action;
+import game.components.meta.BoardAction;
 import game.components.meta.Habitat;
 import game.components.subcomponents.BirdCard;
 import game.components.subcomponents.BonusCard;
 import game.components.subcomponents.Card;
 import game.exception.GameInputException;
+import game.service.DiscordBotService;
 import game.service.GameService;
 import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.DiscordObject;
@@ -30,6 +31,7 @@ import util.StringUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class StringSelectInteractionProcessor {
@@ -38,24 +40,27 @@ public class StringSelectInteractionProcessor {
 
     public static void handleCommand(StringSelectInteractionEvent event) {
         logSelected(event);
-        String[] arr = event.getComponentId().split(":");
-        String componentId = arr[0];
-        String gameId = arr[1];
-        Game currentGame = GameService.getInstance().getGame(gameId);
-        Player currentPlayer = currentGame.getPlayerById(event.getUser().getIdLong());
-        switch (DiscordObject.valueOf(componentId)) {
-            case PICK_STARTING_HAND_BIRD_SELECT_MENU -> pickStartingHandBirdSelectMenu(event, currentGame, currentPlayer);
-            case PICK_STARTING_HAND_BONUS_SELECT_MENU -> pickStartingHandBonusSelectMenu(event, currentGame, currentPlayer);
-            case PICK_STARTING_HAND_FOOD_SELECT_MENU -> pickStartingHandFoodSelectMenu(event, currentGame, currentPlayer);
-            case TAKE_TURN_ACTION_CHOICE_SELECT_MENU -> takeTurnActionChoiceSelectMenu(event, currentGame, currentPlayer);
-            case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_SELECT_BIRD_SUB_MENU -> takeTurnActionChoicePlayBirdSelectBirdSubMenu(event, currentGame, currentPlayer);
-            case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_PICK_HABITAT -> takeTurnActionChoicePlayBirdPickHabitat(event, currentGame, currentPlayer);
-            case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_REMOVE_EGGS -> takeTurnActionChoicePlayBirdRemoveEggs(event, currentGame, currentPlayer);
-            default -> logger.warn("Unmapped component: " + componentId);
+        Optional<DiscordBotService.GameContext> gameContextOptional = DiscordBotService.resolveGameContext(event);
+        if (gameContextOptional.isEmpty()) return;
+        DiscordBotService.GameContext gameContext = gameContextOptional.get();
+
+        switch (DiscordObject.valueOf(gameContext.componentId())) {
+            case PICK_STARTING_HAND_BIRD_SELECT_MENU -> pickStartingHandBirdSelectMenu(event, gameContext.game(), gameContext.player());
+            case PICK_STARTING_HAND_BONUS_SELECT_MENU -> pickStartingHandBonusSelectMenu(event, gameContext.game(), gameContext.player());
+            case PICK_STARTING_HAND_FOOD_SELECT_MENU -> pickStartingHandFoodSelectMenu(event, gameContext.game(), gameContext.player());
+            case TAKE_TURN_ACTION_CHOICE_SELECT_MENU -> takeTurnActionChoiceSelectMenu(event, gameContext.game(), gameContext.player());
+            case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_SELECT_BIRD_SUB_MENU -> takeTurnActionChoicePlayBirdSelectBirdSubMenu(event, gameContext.game(), gameContext.player());
+            case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_PICK_HABITAT -> takeTurnActionChoicePlayBirdPickHabitat(event, gameContext.game(), gameContext.player());
+            case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_REMOVE_EGGS -> takeTurnActionChoicePlayBirdRemoveEggs(event, gameContext.game(), gameContext.player());
+            default -> logger.warn("Unmapped component: " + gameContext.componentId());
         }
     }
 
     private static void takeTurnActionChoicePlayBirdRemoveEggs(StringSelectInteractionEvent event, String newMessage, Game currentGame, Player currentPlayer) {
+        takeTurnActionChoicePlayBirdRemoveEggs(event, newMessage, currentGame, currentPlayer, false);
+    }
+
+    private static void takeTurnActionChoicePlayBirdRemoveEggs(StringSelectInteractionEvent event, String newMessage, Game currentGame, Player currentPlayer, boolean skipped) {
         // If we picked the same bird twice, check that it has 2 eggs
         String[] message = newMessage.split("\n\n");
         String habitatName = message[3].substring(message[3].indexOf(Constants.CHOOSE_HABITAT) + Constants.CHOOSE_HABITAT.length());
@@ -79,11 +84,12 @@ public class StringSelectInteractionProcessor {
         }
 
         // We've done all the steps and can now play the bird
+        String removeEggsFromString = skipped ? Constants.NONE : StringUtil.getListAsString(event.getValues(), ", ");
         event.editMessage(message[0] + "\n\n" + // Pick action
                         message[1] + "\n\n" + // Choose bird
                         message[2] + "\n\n" + // Choose food
                         message[3] + "\n\n" + // Pick a Habitat
-                        Constants.CHOOSE_BIRDS_TO_REMOVE_EGG + StringUtil.getListAsString(event.getValues(), ", "))
+                        Constants.CHOOSE_BIRDS_TO_REMOVE_EGG + removeEggsFromString)
                 .setComponents()
                 .queue();
 
@@ -113,8 +119,8 @@ public class StringSelectInteractionProcessor {
                             message[1] + "\n\n" + // Choose bird
                             message[2] + "\n\n" + // Choose food
                             Constants.CHOOSE_HABITAT + habitatEnum.getJsonValue() + "\n\n" +
-                            Constants.CHOOSE_BIRDS_TO_REMOVE_EGG + " None";
-            takeTurnActionChoicePlayBirdRemoveEggs(event, newMessage, currentGame, currentPlayer);
+                            Constants.CHOOSE_BIRDS_TO_REMOVE_EGG + " " + Constants.NONE;
+            takeTurnActionChoicePlayBirdRemoveEggs(event, newMessage, currentGame, currentPlayer, true);
             return;
         }
 
@@ -137,18 +143,17 @@ public class StringSelectInteractionProcessor {
                         Constants.CHOOSE_BIRDS_TO_REMOVE_EGG)
                 .setComponents(ActionRow.of(selectMenu))
                 .queue();
-        // TODO: we cannot test since we cannot lay eggs rn
     }
 
     private static void takeTurnActionChoiceSelectMenu(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
         try {
-            Action action = Action.valueOf(event.getValues().get(0));
-            switch (action) {
+            BoardAction boardAction = BoardAction.valueOf(event.getValues().get(0));
+            switch (boardAction) {
                 case GAIN_FOOD -> gainFood(event, currentGame, currentPlayer);
                 case LAY_EGGS -> layEggs(event, currentGame, currentPlayer);
                 case PLAY_BIRD -> playBird(event, currentGame, currentPlayer);
                 case DRAW_CARDS -> drawCards(event, currentGame, currentPlayer);
-                default -> logger.warn("Unmapped action: " + action);
+                default -> logger.warn("Unmapped action: " + boardAction);
             }
         } catch (GameInputException ex) {
             event.reply(ex.getMessage()).setEphemeral(true).queue();
@@ -156,12 +161,38 @@ public class StringSelectInteractionProcessor {
     }
 
     private static void gainFood(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
+        int maxFood = currentPlayer.getBoard().getForest().getNumberOfFoodToGain();
+
+        ButtonInteractionProcessor.FeedPickerMessage picker = ButtonInteractionProcessor.buildFeedPickerMessage(currentGame, maxFood, "");
+        event.editMessage(picker.content())
+                .setComponents(picker.components())
+                .queue();
     }
 
     private static void layEggs(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
+        List<BirdCard> allBirds = currentPlayer.getBoard().getPlayedBirds();
+        if (allBirds.isEmpty()) {
+            event.reply("You don't have any birds to lay eggs on").setEphemeral(true).queue();
+            return;
+        }
+
+        currentPlayer.getHand().resetTempEggs();
+        int maxEggs = currentPlayer.getBoard().getGrassland().getNumberOfEggsToLay();
+
+        ButtonInteractionProcessor.LayEggsMessage msg = ButtonInteractionProcessor.buildLayEggsHabitatMessage(currentGame, currentPlayer, maxEggs);
+        event.editMessage(msg.content())
+                .setComponents(msg.components())
+                .queue();
     }
 
     private static void drawCards(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
+        int maxDraw = currentPlayer.getBoard().getWetland().getNumberOfCardsToDraw();
+        currentPlayer.getHand().resetTempDrawnBirds();
+
+        ButtonInteractionProcessor.DrawCardsMessage msg = ButtonInteractionProcessor.buildDrawCardsMessage(currentGame, currentPlayer, maxDraw, 0);
+        event.editMessage(msg.content())
+                .setComponents(msg.components())
+                .queue();
     }
 
     private static void playBird(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) throws GameInputException {
@@ -174,29 +205,13 @@ public class StringSelectInteractionProcessor {
                 .addOptions(currentPlayer.getHand().getBirdCards().stream().map(c -> SelectOption.of(c.getName(), c.getName())).toList())
                 .build();
 
-        event.editMessage(Constants.PICK_ACTION + Action.PLAY_BIRD.getLabel() + "\n\n" + Constants.CHOOSE_BIRD_TO_PLAY + "\n\n")
+        event.editMessage(Constants.PICK_ACTION + BoardAction.PLAY_BIRD.getLabel() + "\n\n" + Constants.CHOOSE_BIRD_TO_PLAY + "\n\n")
                 .setComponents(ActionRow.of(pickBirdSubmenu))
                 .queue();
     }
 
     private static void takeTurnActionChoicePlayBirdSelectBirdSubMenu(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
         currentPlayer.getHand().resetTempPantry();
-
-        List<ActionRow> components = List.of(
-                ActionRow.of(
-                        Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_WORM.name() + ":" + currentGame.getGameId(), "➕").withEmoji(Emoji.fromFormatted(EmojiEnum.INVERTEBRATE.getEmoteId())),
-                        Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_SEED.name() + ":" + currentGame.getGameId(), "➕").withEmoji(Emoji.fromFormatted(EmojiEnum.SEED.getEmoteId())),
-                        Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_FRUIT.name() + ":" + currentGame.getGameId(), "➕").withEmoji(Emoji.fromFormatted(EmojiEnum.FRUIT.getEmoteId())),
-                        Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_FISH.name() + ":" + currentGame.getGameId(), "➕").withEmoji(Emoji.fromFormatted(EmojiEnum.FISH.getEmoteId())),
-                        Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_RODENT.name() + ":" + currentGame.getGameId(), "➕").withEmoji(Emoji.fromFormatted(EmojiEnum.RODENT.getEmoteId()))),
-                ActionRow.of(
-                        Button.danger(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_WORM.name() + ":" + currentGame.getGameId(), "➖").withEmoji(Emoji.fromFormatted(EmojiEnum.INVERTEBRATE.getEmoteId())),
-                        Button.danger(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_SEED.name() + ":" + currentGame.getGameId(), "➖").withEmoji(Emoji.fromFormatted(EmojiEnum.SEED.getEmoteId())),
-                        Button.danger(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_FRUIT.name() + ":" + currentGame.getGameId(), "➖").withEmoji(Emoji.fromFormatted(EmojiEnum.FRUIT.getEmoteId())),
-                        Button.danger(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_FISH.name() + ":" + currentGame.getGameId(), "➖").withEmoji(Emoji.fromFormatted(EmojiEnum.FISH.getEmoteId())),
-                        Button.danger(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_REMOVE_RODENT.name() + ":" + currentGame.getGameId(), "➖").withEmoji(Emoji.fromFormatted(EmojiEnum.RODENT.getEmoteId()))),
-                ActionRow.of(Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_SUBMIT_BUTTON.name() + ":" + currentGame.getGameId(), Constants.SUBMIT_SELECTION))
-        );
 
         String birdToPlay;
         try {
@@ -207,13 +222,36 @@ public class StringSelectInteractionProcessor {
             return;
         }
 
-        event.editMessage(Constants.PICK_ACTION + Action.PLAY_BIRD.getLabel() + "\n\n" +
+        List<ActionRow> components = getChooseFoodSelector(currentGame, currentPlayer);
+
+        event.editMessage(Constants.PICK_ACTION + BoardAction.PLAY_BIRD.getLabel() + "\n\n" +
                         Constants.CHOOSE_BIRD_TO_PLAY + birdToPlay + "\n\n" +
                         Constants.CHOOSE_FOOD_TO_USE + "\n" +
                         "Food used: " + EmojiEnum.getFoodAsEmojiList(currentPlayer.getHand().getTempPantrySpentFood()) + "\n" +
-                        "Food in hand: " + EmojiEnum.getFoodAsEmojiList(currentPlayer.getHand().getPantry()))
+                        "Food in hand: " + EmojiEnum.getFoodAsEmojiList(currentPlayer.getHand().getTempPantryAvailableFood()))
                 .setComponents(components)
                 .queue();
+    }
+
+    public static List<ActionRow> getChooseFoodSelector(Game currentGame, Player currentPlayer) {
+        List<Button> addFoodButtons = new ArrayList<>();
+        List<Button> removeFoodButtons = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            Button addFoodButton = Button.primary(DiscordObject.ADD_FOOD_IDS[i].name() + ":" + currentGame.getGameId(), "➕")
+                    .withEmoji(Emoji.fromFormatted(FoodType.values()[i].getEmoji().getEmoteId()))
+                    .withDisabled(currentPlayer.getHand().getTempPantryAvailableFood().get(FoodType.values()[i]) == 0);
+            Button removeFoodButton = Button.danger(DiscordObject.REMOVE_FOOD_IDS[i].name() + ":" + currentGame.getGameId(), "➖")
+                    .withEmoji(Emoji.fromFormatted(FoodType.values()[i].getEmoji().getEmoteId()))
+                    .withDisabled(currentPlayer.getHand().getTempPantrySpentFood().get(FoodType.values()[i]) == 0);
+            addFoodButtons.add(addFoodButton);
+            removeFoodButtons.add(removeFoodButton);
+        }
+
+        return List.of(
+                ActionRow.of(addFoodButtons),
+                ActionRow.of(removeFoodButtons),
+                ActionRow.of(Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_SUBMIT_BUTTON.name() + ":" + currentGame.getGameId(), Constants.SUBMIT_SELECTION))
+        );
     }
 
     private static void pickStartingHandFoodSelectMenu(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
@@ -228,7 +266,7 @@ public class StringSelectInteractionProcessor {
         EmbedBuilder newEmbedBuilder = new EmbedBuilder(embed);
         newEmbedBuilder.getFields().removeIf(f -> Objects.equals(f.getName(), Constants.FOOD_SELECTED_FIELD));
         MessageEmbed newEmbed = newEmbedBuilder.setDescription(Objects.requireNonNull(embed.getDescription()).replace(Constants.FOOD_NOT_SELECTED, Constants.FOOD_SELECTED))
-                .addField(Constants.FOOD_SELECTED_FIELD, foodSelected.isEmpty() ? "None" : StringUtil.getListAsString(foodSelected.stream().map(FoodType::getJsonName), ", "), true)
+                .addField(Constants.FOOD_SELECTED_FIELD, foodSelected.isEmpty() ? "None" : StringUtil.getListAsString(foodSelected.stream().map(FoodType::getDisplayName), ", "), true)
                 .build();
 
         String buttonId = DiscordObject.PICK_STARTING_HAND_SUBMIT_BUTTON.name() + ":" + currentGame.getGameId();

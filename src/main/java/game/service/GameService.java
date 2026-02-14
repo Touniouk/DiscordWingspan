@@ -4,13 +4,16 @@ import game.Game;
 import game.Player;
 import game.components.enums.FoodType;
 import game.components.enums.HabitatEnum;
+import game.components.meta.GameAction;
 import game.components.subcomponents.BirdCard;
 import game.exception.GameInputException;
 import game.service.enumeration.PlayerState;
 import game.service.enumeration.PlayerStateMachine;
+import game.ui.discord.enumeration.DiscordObject;
 import lombok.Getter;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import util.LogLevel;
 import util.Logger;
 
@@ -59,9 +62,17 @@ public class GameService {
     }
 
     private void startTurnForPlayer(Game game, Player player) {
+        logger.info("Starting turn for player " + player.getUser().getName());
         PlayerStateMachine.transition(player, PlayerState.PLAYING_TURN);
-        DiscordBotService.getInstance().sendMessage(game.getGameChannel(),
-                player.getUser().getAsMention() + " please take your turn (turn " + game.getTurnCounter() + ") with the `take_turn` action and game id `" + game.getGameId() + "`");
+        String gameId = game.getGameId();
+        Button takeTurnButton = Button.success(DiscordObject.PROMPT_TAKE_TURN_BUTTON.name() + ":" + gameId, "\uD83C\uDFAF Take Turn");
+        Button seeBoardButton = Button.secondary(DiscordObject.PROMPT_SEE_BOARD_BUTTON.name() + ":" + gameId, "\uD83D\uDCCB See Board");
+        Button seeFeederButton = Button.secondary(DiscordObject.PROMPT_SEE_FEEDER_BUTTON.name() + ":" + gameId, "\uD83C\uDFB2 See Feeder");
+        Button seeTrayButton = Button.secondary(DiscordObject.PROMPT_SEE_TRAY_BUTTON.name() + ":" + gameId, "\uD83D\uDC26 See Tray");
+        game.getGameChannel().sendMessage(
+                player.getUser().getAsMention() + " please take your turn (turn " + game.getTurnCounter() + ")")
+                .addActionRow(takeTurnButton, seeBoardButton, seeFeederButton, seeTrayButton)
+                .queue();
     }
 
     public void checkAllPlayersReady(Game game) {
@@ -139,5 +150,41 @@ public class GameService {
         currentGame.getGameChannel().sendMessage(
                 currentPlayer.getUser().getAsMention() + " played " + birdToPlay.getName() + " in their " + habitatEnum.getJsonValue()
         ).queue();
+
+        // End turn
+        endTurn(currentGame, currentPlayer);
+    }
+
+    public void confirmLayEggs(Game currentGame, Player currentPlayer, int totalEggs) {
+        currentGame.getGameChannel().sendMessage(
+                currentPlayer.getUser().getAsMention() + " laid " + totalEggs + " egg" + (totalEggs != 1 ? "s" : "")
+        ).queue();
+
+        endTurn(currentGame, currentPlayer);
+    }
+
+    public void endTurn(Game currentGame, Player currentPlayer) {
+        logger.info("Ending turn for player " + currentPlayer.getUser().getName());
+        PlayerStateMachine.transition(currentPlayer, PlayerState.WAITING_FOR_TURN);
+        currentGame.advanceTurn();
+        Player nextPlayer = currentGame.getPlayers().get(currentGame.getCurrentPlayerIndex());
+        startTurnForPlayer(currentGame, nextPlayer);
+    }
+
+    /**
+     * Check if a player taking an action is allowed to take said action
+     */
+    public boolean isPlayerAllowedAction(Player player, GameAction action) {
+        return switch (action) {
+            case TAKE_TURN -> player.getState() == PlayerState.PLAYING_TURN;
+        };
+    }
+
+    public void confirmDrawCards(Game currentGame, Player currentPlayer, int totalCards) {
+        currentGame.getGameChannel().sendMessage(
+                currentPlayer.getUser().getAsMention() + " drew " + totalCards + " card" + (totalCards != 1 ? "s" : "")
+        ).queue();
+
+        endTurn(currentGame, currentPlayer);
     }
 }

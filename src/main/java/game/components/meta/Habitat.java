@@ -6,12 +6,17 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
 public class Habitat {
 
     public static final int numberOfSpaceInHabitat = 5;
 
-    @Getter
-    private List<BirdCard> birds = new ArrayList<>();
+    private final List<BirdCard> birds = new ArrayList<>();
+    private final boolean nectarBoard;
+
+    public Habitat(boolean nectarBoard) {
+        this.nectarBoard = nectarBoard;
+    }
 
     public boolean isHabitatFull() {
         return birds.size() >= numberOfSpaceInHabitat;

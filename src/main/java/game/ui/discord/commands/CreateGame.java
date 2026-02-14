@@ -9,7 +9,6 @@ import game.components.subcomponents.Card;
 import game.service.DiscordBotService;
 import game.service.GameService;
 import game.ui.discord.DiscordBot;
-import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.DiscordObject;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
@@ -21,8 +20,6 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
-import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import util.StringUtil;
 
 import java.util.*;
@@ -66,6 +63,10 @@ public class CreateGame implements SlashCommand {
                 .filter(Objects::nonNull)
                 .map(OptionMapping::getAsUser)
                 .toList();
+        if (playerList.stream().anyMatch(User::isBot)) {
+            event.reply("Bots can't play Wingspan!").setEphemeral(true).queue();
+            return;
+        }
         TextChannel gameChannel = Optional
                 .ofNullable(event.getOption(PARAM_CHANNEL))
                 .map(OptionMapping::getAsChannel)
@@ -76,46 +77,40 @@ public class CreateGame implements SlashCommand {
         Game game = GameService.getInstance().createGame(gameChannel, playerList);
         String gameId = game.getGameId();
 
-        String playersAsMention = StringUtil.getListAsString(GameService.getInstance().getGame(gameId).getPlayers().stream().map(p -> p.getUser().getAsMention()).toList(), "");
-        event.getChannel().sendMessage("Game `" + gameId + "` created with " + playersAsMention).queue();
+        if (testData) {
+            game.getPlayers().forEach(player -> addTestData(game, player));
+        }
 
-        game.getPlayers().forEach(player -> {
-//            sendStartingHandEmbeds(player);
-            addTestData(testData, game, player);
-
-            EmbedBuilder embed = new EmbedBuilder()
-                    .setTitle(Constants.CHOOSE_STARTING_HAND)
-                    .setDescription(Constants.BIRDS_NOT_SELECTED + "\n" + Constants.FOOD_NOT_SELECTED + "\n" + Constants.BONUS_NOT_SELECTED)
-                    .setColor(0x1abc9c);
-            event.replyEmbeds(embed.build())
-                    .addActionRow(getStartingHandBirdsSelectMenu(player.getHand().getBirdCards(), gameId))
-                    .addActionRow(getStartingHandFoodSelectMenu(gameId))
-                    .addActionRow(getStartingHandBonusSelectMenu(player.getHand().getBonusCards(), gameId))
-                    .addActionRow(
-                            Button.primary(DiscordObject.PICK_STARTING_HAND_SUBMIT_BUTTON.name() + ":" + gameId, Constants.SUBMIT_SELECTION)
-                                    .withDisabled(true),
-                            Button.secondary(DiscordObject.PICK_STARTING_HAND_RANDOMISE_BUTTON.name() + ":" + gameId, "\uD83D\uDD00 Random Selection"))
-                    .setEphemeral(true)
-                    .queue();
-        });
+        Button takeTurnButton = Button.success(DiscordObject.PROMPT_PICK_HAND_BUTTON.name() + ":" + gameId, "\uD83D\uDC50 Pick Starting Hand");
+        Button seeFeederButton = Button.secondary(DiscordObject.PROMPT_SEE_FEEDER_BUTTON.name() + ":" + gameId, "\uD83C\uDFB2 See Feeder");
+        Button seeTrayButton = Button.secondary(DiscordObject.PROMPT_SEE_TRAY_BUTTON.name() + ":" + gameId, "\uD83D\uDC26 See Tray");
+        String playersAsMention = StringUtil.getListAsString(
+                GameService.getInstance().getGame(gameId)
+                        .getPlayers().stream()
+                        .map(p -> p.getUser().getAsMention())
+                        .toList(), "");
+        event.reply("Game `" + gameId + "` created with " + playersAsMention)
+                .addActionRow(takeTurnButton, seeFeederButton, seeTrayButton)
+                .queue();
     }
 
     /**
      * Add test data for the player creating the game
      */
-    private void addTestData(boolean testData, Game game, Player player) {
-        if (!testData || game.getPlayers().size() != 1) {
+    private void addTestData(Game game, Player player) {
+        if (game.getPlayers().size() != 1) {
             return;
         }
         IntStream.range(0, (int) (Math.random() * 4) + 1).forEach(i -> player.getBoard().getForest().addBird(game.getBirdDeck().drawCard()));
         IntStream.range(0, (int) (Math.random() * 4) + 1).forEach(i -> player.getBoard().getGrassland().addBird(game.getBirdDeck().drawCard()));
         IntStream.range(0, (int) (Math.random() * 4) + 1).forEach(i -> player.getBoard().getWetland().addBird(game.getBirdDeck().drawCard()));
-        List.of(FoodType.INVERTEBRATE, FoodType.SEED, FoodType.FRUIT, FoodType.FISH, FoodType.RODENT, FoodType.NECTAR).forEach(f -> player.getHand().getPantry().put(f, (int) (Math.random() * 5)));
+        List.of(FoodType.WORM, FoodType.SEED, FoodType.FRUIT, FoodType.FISH, FoodType.RODENT, FoodType.NECTAR).forEach(f -> player.getHand().getPantry().put(f, (int) (Math.random() * 5)));
         List<BirdCard> playedBirds = player.getBoard().getPlayedBirds();
         Collections.shuffle(playedBirds);
         playedBirds.subList(0, playedBirds.size()/2).forEach(b -> b.getNest().setNumberOfEggs((int) (Math.random() * 3)));
     }
 
+    // FIXME: Potentially send the starting hands in the players DMs?
     private void sendStartingHandEmbeds(Player player) {
         EmbedBuilder startingHandBirdsEmbed = getStartingHandBirdsEmbed(player.getHand().getBirdCards());
         player.getUser().openPrivateChannel()
@@ -150,32 +145,5 @@ public class CreateGame implements SlashCommand {
             embed.addField(i + ". " + bonusCards.get(i-1).getName(), StringUtil.replacePlaceholders(bonusCards.get(i-1).getCondition()), true);
         }
         return embed;
-    }
-
-    private StringSelectMenu getStartingHandBirdsSelectMenu(List<BirdCard> birds, String gameId) {
-        return StringSelectMenu.create(DiscordObject.PICK_STARTING_HAND_BIRD_SELECT_MENU.name() + ":" + gameId)
-                .setPlaceholder("Pick starting hand birds")
-                .setMinValues(1)
-                .setMaxValues(5)
-                .addOption("None", "none")
-                .addOptions(birds.stream().sorted(Comparator.comparing(Card::getName)).map(bird -> SelectOption.of(bird.getName(), bird.getName())).toList())
-                .build();
-    }
-
-    private StringSelectMenu getStartingHandFoodSelectMenu(String gameId) {
-        return StringSelectMenu.create(DiscordObject.PICK_STARTING_HAND_FOOD_SELECT_MENU.name() + ":" + gameId)
-                .setPlaceholder("Pick starting hand food")
-                .setMinValues(1)
-                .setMaxValues(5)
-                .addOption("None", "none")
-                .addOptions(FoodType.getStartingHandFoodTypes().stream().map(food -> SelectOption.of(food.getJsonName(), food.name())).toList())
-                .build();
-    }
-
-    private StringSelectMenu getStartingHandBonusSelectMenu(List<BonusCard> bonusCards, String gameId) {
-        return StringSelectMenu.create(DiscordObject.PICK_STARTING_HAND_BONUS_SELECT_MENU.name() + ":" + gameId)
-                .setPlaceholder("Pick starting hand bonus cards")
-                .addOptions(bonusCards.stream().sorted(Comparator.comparing(Card::getName)).map(bird -> SelectOption.of(bird.getName(), bird.getName())).toList())
-                .build();
     }
 }

@@ -1,6 +1,9 @@
 package game.components.enums;
 
+import game.ui.discord.enumeration.EmojiEnum;
 import lombok.Getter;
+import util.LogLevel;
+import util.Logger;
 
 import java.util.Arrays;
 import java.util.List;
@@ -8,28 +11,50 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public enum FoodType {
-    INVERTEBRATE("Invertebrate"),
-    SEED("Seed"),
-    FRUIT("Fruit"),
-    FISH("Fish"),
-    RODENT("Rodent"),
-    NECTAR("Nectar"),
-    WILD("Wild (food)");
+    WORM("Invertebrate", "Worm", EmojiEnum.WORM),
+    SEED("Seed", "Seed", EmojiEnum.SEED),
+    FRUIT("Fruit", "Fruit", EmojiEnum.FRUIT),
+    FISH("Fish", "Fish", EmojiEnum.FISH),
+    RODENT("Rodent", "Rodent", EmojiEnum.RODENT),
+    NECTAR("Nectar", "Nectar", EmojiEnum.NECTAR),
+    WILD("Wild (food)", "Wild", EmojiEnum.WILD);
+
+    private static final Logger logger = new Logger(FoodType.class, LogLevel.ALL);
 
     @Getter
     private final String jsonName;
-    private static final Map<String, FoodType> jsonNameMap = Arrays.stream(FoodType.values())
-            .collect(Collectors.toMap(e -> e.jsonName, e -> e));
+    @Getter
+    private final String displayName;
+    @Getter
+    private final EmojiEnum emoji;
 
-    FoodType(String jsonName) {
+    private static final Map<String, FoodType> jsonNameMap;
+    private static final Map<String, FoodType> displayNameMap;
+
+    static {
+        jsonNameMap = Arrays.stream(FoodType.values())
+                .collect(Collectors.toMap(e -> e.jsonName, e -> e));
+        displayNameMap = Arrays.stream(FoodType.values())
+                .collect(Collectors.toMap(e -> e.displayName, e -> e));
+    }
+
+    FoodType(String jsonName, String displayName, EmojiEnum emoji) {
         this.jsonName = jsonName;
+        this.displayName = displayName;
+        this.emoji = emoji;
     }
 
     public static FoodType fromJsonName(String jsonName) {
+        logger.debug("Getting food type from json name " + jsonName);
         return jsonNameMap.get(jsonName);
     }
 
+    public static FoodType fromDisplayName(String displayName) {
+        logger.debug("Getting food type from display name " + displayName);
+        return displayNameMap.get(displayName);
+    }
+
     public static List<FoodType> getStartingHandFoodTypes() {
-        return List.of(INVERTEBRATE, SEED, FRUIT, FISH, RODENT);
+        return List.of(WORM, SEED, FRUIT, FISH, RODENT);
     }
 }
