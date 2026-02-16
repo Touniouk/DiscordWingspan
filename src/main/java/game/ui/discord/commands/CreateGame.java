@@ -8,9 +8,7 @@ import game.components.enums.FoodType;
 import game.components.subcomponents.BirdCard;
 import game.components.subcomponents.BonusCard;
 import game.components.subcomponents.Card;
-import game.service.DiscordBotService;
 import game.service.GameService;
-import game.ui.discord.DiscordBot;
 import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.DiscordObject;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -138,9 +136,9 @@ public class CreateGame implements SlashCommand {
         Button setSeedButton = Button.primary(DiscordObject.CREATE_GAME_SET_SEED_BUTTON.name() + ":" + lobbyId, "\uD83C\uDFB2 Set Seed");
 
         // Row 3: Player count - / + buttons
-        Button decrementButton = Button.secondary(DiscordObject.CREATE_GAME_PLAYER_COUNT_DECREMENT.name() + ":" + lobbyId, "\u2796 Players")
+        Button decrementButton = Button.secondary(DiscordObject.CREATE_GAME_PLAYER_COUNT_DECREMENT.name() + ":" + lobbyId, "➖ Players")
                 .withDisabled(lobby.getPlayerCount() <= 1);
-        Button incrementButton = Button.secondary(DiscordObject.CREATE_GAME_PLAYER_COUNT_INCREMENT.name() + ":" + lobbyId, "\u2795 Players")
+        Button incrementButton = Button.secondary(DiscordObject.CREATE_GAME_PLAYER_COUNT_INCREMENT.name() + ":" + lobbyId, "➕ Players")
                 .withDisabled(lobby.getPlayerCount() >= Constants.LOBBY_MAX_PLAYERS);
 
         // Row 4: Create Game button
@@ -157,8 +155,8 @@ public class CreateGame implements SlashCommand {
     private static List<ActionRow> buildWaitingComponents(GameLobby lobby) {
         String lobbyId = lobby.getLobbyId();
 
-        Button joinButton = Button.success(DiscordObject.CREATE_GAME_JOIN_BUTTON.name() + ":" + lobbyId, "\u2705 Join Game");
-        Button leaveButton = Button.danger(DiscordObject.CREATE_GAME_LEAVE_BUTTON.name() + ":" + lobbyId, "\u274C Leave Game");
+        Button joinButton = Button.success(DiscordObject.CREATE_GAME_JOIN_BUTTON.name() + ":" + lobbyId, "✅ Join Game");
+        Button leaveButton = Button.danger(DiscordObject.CREATE_GAME_LEAVE_BUTTON.name() + ":" + lobbyId, "❌ Leave Game");
 
         return List.of(
                 ActionRow.of(joinButton, leaveButton)
@@ -179,19 +177,6 @@ public class CreateGame implements SlashCommand {
         List<BirdCard> playedBirds = player.getBoard().getPlayedBirds();
         Collections.shuffle(playedBirds);
         playedBirds.subList(0, playedBirds.size()/2).forEach(b -> b.getNest().setNumberOfEggs((int) (Math.random() * 3)));
-    }
-
-    // FIXME: Potentially send the starting hands in the players DMs?
-    private void sendStartingHandEmbeds(Player player) {
-        EmbedBuilder startingHandBirdsEmbed = getStartingHandBirdsEmbed(player.getHand().getBirdCards());
-        player.getUser().openPrivateChannel()
-                .flatMap(channel -> channel.sendMessageEmbeds(startingHandBirdsEmbed.build()))
-                .queue();
-
-        EmbedBuilder startingHandBonusEmbed = getStartingHandBonusEmbed(player.getHand().getBonusCards());
-        player.getUser().openPrivateChannel()
-                .flatMap(channel -> channel.sendMessageEmbeds(startingHandBonusEmbed.build()))
-                .queue();
     }
 
     private EmbedBuilder getStartingHandBirdsEmbed(List<BirdCard> birds) {

@@ -35,8 +35,8 @@ public class GameService {
     private static final GameService INSTANCE = new GameService();
 
     @Getter
-    private Map<String, Game> activeGames = new HashMap<>();
-    private Map<String, GameLobby> activeLobbies = new HashMap<>();
+    private final Map<String, Game> activeGames = new HashMap<>();
+    private final Map<String, GameLobby> activeLobbies = new HashMap<>();
     private int lobbyCounter = 0;
 
     private GameService() {}
@@ -78,18 +78,6 @@ public class GameService {
     }
 
     // ======================== GAME MANAGEMENT ========================
-
-    /**
-     * Creates a new game in the given channel with the provided players and starts it.
-     *
-     * @return the newly created and started game
-     */
-    public Game createGame(TextChannel gameChannel, List<User> playerList) {
-        Game game = new Game(gameChannel, activeGames.values().size(), playerList.toArray(new User[0]));
-        activeGames.put(game.getGameId(), game);
-        game.startGame();
-        return game;
-    }
 
     /**
      * Confirms a player's starting hand selection in the specified game.

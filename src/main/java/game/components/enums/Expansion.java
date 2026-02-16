@@ -29,7 +29,7 @@ public enum Expansion {
     private static final Map<String, Expansion> jsonNameMap = Arrays.stream(Expansion.values())
             .collect(Collectors.toMap(e -> e.jsonName, e -> e));
 
-    private Expansion(String label, String jsonName) {
+    Expansion(String label, String jsonName) {
         this.label = label;
         this.jsonName = jsonName;
     }

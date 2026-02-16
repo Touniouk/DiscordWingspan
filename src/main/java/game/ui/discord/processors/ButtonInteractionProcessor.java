@@ -3,7 +3,6 @@ package game.ui.discord.processors;
 import game.Game;
 import game.GameLobby;
 import game.Player;
-import game.components.enums.Expansion;
 import game.components.enums.FoodType;
 import game.components.enums.HabitatEnum;
 import game.components.meta.BoardAction;

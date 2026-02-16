@@ -236,7 +236,6 @@ public class StringSelectInteractionProcessor {
         String birdToPlay;
         try {
             birdToPlay = event.getValues().stream().findFirst().orElseThrow(() -> new GameInputException("No bird selected"));
-            BirdCard birdCard = currentPlayer.getHand().getBirdByName(birdToPlay).orElseThrow(() -> new GameInputException("You do not have *" + birdToPlay + "* in hand"));
         } catch (GameInputException ex) {
             event.reply(ex.getMessage()).setEphemeral(true).queue();
             return;
