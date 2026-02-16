@@ -28,4 +28,22 @@ public class Grassland extends Habitat {
             };
         }
     }
+
+    @Override
+    public int getNumberOfResourcesToDiscard() {
+        if (isNectarBoard()) {
+            return switch (getBirds().size()) {
+                case 1, 5 -> 0;
+                case 0, 2, 4 -> 1;
+                case 3 -> 2;
+                default -> throw new IllegalStateException("Unexpected value: " + getBirds().size());
+            };
+        } else {
+            return switch (getBirds().size()) {
+                case 1, 3, 5 -> 1;
+                case 0, 2, 4 -> 0;
+                default -> throw new IllegalStateException("Unexpected value: " + getBirds().size());
+            };
+        }
+    }
 }

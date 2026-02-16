@@ -86,7 +86,7 @@ public class Game {
         this.startingBonusHandSize = startingBonusHandSize;
 
         boolean withNectar = expansions.contains(Expansion.OCEANIA);
-        logger.debug(String.format("Parameters:\nSeed : %s\nstartingBirdHandSize : %s\nstartingBonusHandSize : %s\nexpansions : %s\nPlayers : %s",
+        logger.debug(String.format("Parameters:\nSeed : %s\nstartingBirdHandSize : %s\nstartingBonusHandSize : %s\nexpansions : %s\nplayers : %s",
                 GAME_SEED, startingBirdHandSize, startingBonusHandSize, expansions, StringUtil.getListAsString(Arrays.stream(playerUsers).map(User::getName).toList(), ", ")));
 
         logger.unnecessary("Setting up players");

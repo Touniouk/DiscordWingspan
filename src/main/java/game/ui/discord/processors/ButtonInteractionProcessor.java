@@ -62,6 +62,8 @@ public class ButtonInteractionProcessor {
                 // Pick Starting hand buttons
                 case PICK_STARTING_HAND_SUBMIT_BUTTON -> pickStartingHandSubmitButton(event, gameContext.game(), userId);
                 case PICK_STARTING_HAND_RANDOMISE_BUTTON -> pickStartingHandRandomiseButton(event, gameContext.game(), gameContext.player());
+
+                // Play bird buttons
                 case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_WORM,
                      TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_FISH,
                      TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_CHOOSE_FOOD_ADD_SEED,
@@ -107,6 +109,7 @@ public class ButtonInteractionProcessor {
                      TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_DRAW_TRAY_1,
                      TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_DRAW_TRAY_2 -> toggleTrayBirdSelected(event, gameContext.game(), gameContext.player());
                 case TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_DRAW_DECK -> drawCardFromDeck(event, gameContext.game(), gameContext.player());
+                case TAKE_TURN_ACTION_DISCARD_EGGS -> discardEggToDrawCard(event, gameContext.game(), gameContext.player());
                 case TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_SUBMIT -> submitCardDrawSelection(event, gameContext.game(), gameContext.player());
                 default -> logger.warn("Button id not matched: " + gameContext.componentId());
             }
@@ -114,6 +117,8 @@ public class ButtonInteractionProcessor {
             event.reply(ex.getMessage()).setEphemeral(true).queue();
         }
     }
+
+    record DiscordMessage(String content, List<ActionRow> components) {}
 
     // ======================== PLAY BIRD ========================
 
@@ -137,6 +142,7 @@ public class ButtonInteractionProcessor {
             event.reply(ex.getMessage()).setEphemeral(true).queue();
             return;
         }
+        logger.ridiculous("Bird food cost: " + birdCard.getFoodCost() + ", provided food: " + currentPlayer.getHand().getTempPantrySpentFood());
         int meetFoodCost = GameService.getInstance().checkFoodCost(birdCard.getFoodCost(), currentPlayer.getHand().getTempPantrySpentFood());
         if (meetFoodCost > 0) {
             event.reply("You must meet the bird food cost exactly. You've used too much food").setEphemeral(true).queue();
@@ -417,7 +423,7 @@ public class ButtonInteractionProcessor {
                 .queue();
     }
 
-    static FeedPickerMessage buildFeedPickerMessage(Game game, int maxFood, String foodGainedSoFar) {
+    static DiscordMessage buildFeedPickerMessage(Game game, int maxFood, String foodGainedSoFar) {
         List<Die> dice = game.getFeeder().getDiceInFeeder();
         String gameId = game.getGameId();
 
@@ -443,10 +449,8 @@ public class ButtonInteractionProcessor {
         }
 
         List<ActionRow> rows = List.of(ActionRow.of(dieButtons), ActionRow.of(submitButton, rerollButton));
-        return new FeedPickerMessage(message, rows);
+        return new DiscordMessage(message, rows);
     }
-
-    record FeedPickerMessage(String content, List<ActionRow> components) {}
 
     private static int resolveDieIndex(String buttonComponentId) {
         for (int i = 0; i < DiscordObject.GAIN_FOOD_DIE_IDS.length; i++) {
@@ -561,7 +565,7 @@ public class ButtonInteractionProcessor {
         // Actually reset the feeder
         currentGame.getFeeder().reRollFeeder();
 
-        FeedPickerMessage picker = buildFeedPickerMessage(currentGame, maxFood, allFood);
+        DiscordMessage picker = buildFeedPickerMessage(currentGame, maxFood, allFood);
         event.editMessage(picker.content())
                 .setComponents(picker.components())
                 .queue();
@@ -569,9 +573,7 @@ public class ButtonInteractionProcessor {
 
     // ======================== LAY EGGS ========================
 
-    record LayEggsMessage(String content, List<ActionRow> components) {}
-
-    static LayEggsMessage buildLayEggsHabitatMessage(Game game, Player player, int maxEggs) {
+    static DiscordMessage buildLayEggsHabitatMessage(Game game, Player player, int maxEggs) {
         String gameId = game.getGameId();
         int eggsRemaining = maxEggs - player.getHand().getTotalTempEggs();
 
@@ -608,10 +610,8 @@ public class ButtonInteractionProcessor {
         for (int h = 0; h < habitats.length; h++) {
             Habitat habitat = player.getBoard().getHabitat(habitats[h]);
             Button btn = Button.primary(DiscordObject.LAY_EGGS_HABITAT_IDS[h].name() + ":" + gameId, habitats[h].getJsonValue())
-                    .withEmoji(Emoji.fromFormatted(habitats[h].getEmoji().getEmoteId()));
-            if (habitat.getBirds().isEmpty() || !habitatHasRoom[h] || eggsRemaining <= 0) {
-                btn = btn.asDisabled();
-            }
+                    .withEmoji(Emoji.fromFormatted(habitats[h].getEmoji().getEmoteId()))
+                    .withDisabled(habitat.getBirds().isEmpty() || !habitatHasRoom[h] || eggsRemaining <= 0);
             habitatButtons.add(btn);
         }
 
@@ -621,7 +621,7 @@ public class ButtonInteractionProcessor {
         rows.add(ActionRow.of(habitatButtons));
         rows.add(ActionRow.of(submitButton));
 
-        return new LayEggsMessage(content.toString(), rows);
+        return new DiscordMessage(content.toString(), rows);
     }
 
     private static int parseMaxEggsFromMessage(String content) {
@@ -639,13 +639,13 @@ public class ButtonInteractionProcessor {
 
     private static void showLayEggsBirdsForHabitat(ButtonInteractionEvent event, Game game, Player player, HabitatEnum habitatEnum) {
         int maxEggs = parseMaxEggsFromMessage(event.getMessage().getContentRaw());
-        LayEggsMessage msg = buildLayEggsBirdMessage(game, player, habitatEnum, maxEggs);
+        DiscordMessage msg = buildLayEggsBirdMessage(game, player, habitatEnum, maxEggs);
         event.editMessage(msg.content())
                 .setComponents(msg.components())
                 .queue();
     }
 
-    private static LayEggsMessage buildLayEggsBirdMessage(Game game, Player player, HabitatEnum habitatEnum, int maxEggs) {
+    private static DiscordMessage buildLayEggsBirdMessage(Game game, Player player, HabitatEnum habitatEnum, int maxEggs) {
         String gameId = game.getGameId();
         Habitat habitat = player.getBoard().getHabitat(habitatEnum);
         List<BirdCard> birds = habitat.getBirds();
@@ -698,7 +698,7 @@ public class ButtonInteractionProcessor {
         rows.add(ActionRow.of(removeButtons));
         rows.add(ActionRow.of(backButton, submitButton));
 
-        return new LayEggsMessage(content.toString(), rows);
+        return new DiscordMessage(content.toString(), rows);
     }
 
     private static int resolveBirdIndex(String buttonComponentId) {
@@ -732,7 +732,7 @@ public class ButtonInteractionProcessor {
 
         player.getHand().addTempEgg(bird);
 
-        LayEggsMessage msg = buildLayEggsBirdMessage(game, player, habitatEnum, maxEggs);
+        DiscordMessage msg = buildLayEggsBirdMessage(game, player, habitatEnum, maxEggs);
         event.editMessage(msg.content())
                 .setComponents(msg.components())
                 .queue();
@@ -756,7 +756,7 @@ public class ButtonInteractionProcessor {
         player.getHand().removeTempEgg(bird);
 
         int maxEggs = parseMaxEggsFromMessage(event.getMessage().getContentRaw());
-        LayEggsMessage msg = buildLayEggsBirdMessage(game, player, habitatEnum, maxEggs);
+        DiscordMessage msg = buildLayEggsBirdMessage(game, player, habitatEnum, maxEggs);
         event.editMessage(msg.content())
                 .setComponents(msg.components())
                 .queue();
@@ -764,7 +764,7 @@ public class ButtonInteractionProcessor {
 
     private static void layEggsBackToHabitat(ButtonInteractionEvent event, Game game, Player player) {
         int maxEggs = parseMaxEggsFromMessage(event.getMessage().getContentRaw());
-        LayEggsMessage msg = buildLayEggsHabitatMessage(game, player, maxEggs);
+        DiscordMessage msg = buildLayEggsHabitatMessage(game, player, maxEggs);
         event.editMessage(msg.content())
                 .setComponents(msg.components())
                 .queue();
@@ -784,9 +784,7 @@ public class ButtonInteractionProcessor {
 
     // ======================== DRAW CARDS ========================
 
-    record DrawCardsMessage(String content, List<ActionRow> components) {}
-
-    public static DrawCardsMessage buildDrawCardsMessage(Game game, Player player, int maxDraw, int selectedCount) {
+    public static DiscordMessage buildDrawCardsMessage(Game game, Player player, int maxDraw, int selectedCount) {
         List<Button> drawTrayButtons = new ArrayList<>();
         for (int i = 0; i < DiscordObject.DRAW_FROM_TRAY_IDS.length; i++) {
             drawTrayButtons.add(Button.secondary(DiscordObject.DRAW_FROM_TRAY_IDS[i] + ":" + game.getGameId(), game.getBirdDeck().getTray()[i].getName())
@@ -796,7 +794,7 @@ public class ButtonInteractionProcessor {
         return buildDrawCardsMessage(game, player, maxDraw, selectedCount, drawTrayButtons);
     }
 
-    private static DrawCardsMessage buildDrawCardsMessage(Game game, Player player, int maxDraw, int selectedCount, List<Button> drawTrayButtons) {
+    static DiscordMessage buildDrawCardsMessage(Game game, Player player, int maxDraw, int selectedCount, List<Button> drawTrayButtons) {
         Button drawDeckButton = Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_DRAW_DECK + ":" + game.getGameId(), "Deck")
                 .withEmoji(Emoji.fromFormatted(EmojiEnum.CARD.getEmoteId()))
                 .withDisabled(selectedCount >= maxDraw);
@@ -811,9 +809,18 @@ public class ButtonInteractionProcessor {
                 "Cards remaining: " + (maxDraw - selectedCount) + "\n\n" +
                 drawnBirds;
 
+        int numberOfResourcesToDiscard = player.getBoard().getWetland().getNumberOfResourcesToDiscard();
+        int numberOfResourcesDiscarded = player.getBoard().getWetland().getNumberOfResourcesDiscarded();
+        logger.ridiculous(player.getUser().getName() + ": resources to discard = " + numberOfResourcesToDiscard + ", numberOfResourcesDiscarded = " + numberOfResourcesDiscarded);
+        Button discardEggsButton = Button.secondary(DiscordObject.TAKE_TURN_ACTION_DISCARD_EGGS + ":" + game.getGameId(), Constants.DISCARD_RESOURCES)
+                .withDisabled(numberOfResourcesDiscarded >= numberOfResourcesToDiscard);
+
         Button submitButton = Button.success(DiscordObject.TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_SUBMIT + ":" + game.getGameId(), Constants.SUBMIT_SELECTION);
-        List<ActionRow> components = List.of(ActionRow.of(Stream.concat(Stream.of(drawDeckButton), drawTrayButtons.stream()).toList()), ActionRow.of(submitButton));
-        return new DrawCardsMessage(message, components);
+        List<ActionRow> components = List.of(
+                ActionRow.of(Stream.concat(Stream.of(drawDeckButton), drawTrayButtons.stream()).toList()),
+                ActionRow.of(discardEggsButton),
+                ActionRow.of(submitButton));
+        return new DiscordMessage(message, components);
     }
 
     private static void toggleTrayBirdSelected(ButtonInteractionEvent event, Game game, Player player) {
@@ -858,40 +865,40 @@ public class ButtonInteractionProcessor {
                 .forEach(button -> finalTrayButtons.add(button.withDisabled(selectedCount.get() >= maxDraw && button.getStyle() == ButtonStyle.SECONDARY)));
 
         // Build the response
-        ButtonInteractionProcessor.DrawCardsMessage msg = ButtonInteractionProcessor.buildDrawCardsMessage(game, player, maxDraw, selectedCount.get(), finalTrayButtons);
+        ButtonInteractionProcessor.DiscordMessage msg = ButtonInteractionProcessor.buildDrawCardsMessage(game, player, maxDraw, selectedCount.get(), finalTrayButtons);
         event.editMessage(msg.content())
                 .setComponents(msg.components())
                 .queue();
     }
 
     private static void drawCardFromDeck(ButtonInteractionEvent event, Game game, Player player) {
-        List<ActionRow> oldRows = event.getMessage().getActionRows();
-        ActionRow drawTray = oldRows.get(0);
+        ActionRow drawTray = event.getMessage().getActionRows().get(0);
 
         // Draw card from deck
         player.getHand().getTempDrawnBirds().add(game.getBirdDeck().drawCard());
 
-        String messageContent = event.getMessage().getContentRaw();
-        int maxDraw = parseMaxDrawMessage(messageContent);
+        int maxDraw = parseMaxDrawMessage(event.getMessage().getContentRaw());
 
         // Count selected tray birds + drawn deck birds
         int selectedCount = player.getHand().getTempDrawnBirds().size();
-        selectedCount += drawTray.getComponents().stream()
-                .filter(component -> component instanceof Button)
-                .filter(button -> ((Button) button).getStyle() == ButtonStyle.SUCCESS)
-                .count();
+        List<Button> trayButtons = new ArrayList<>();
+        for (ItemComponent component : drawTray.getComponents()) {
+            if (component instanceof Button button) {
+                String id = Objects.requireNonNull(button.getId()).split(":")[0];
+                if (!DiscordObject.TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_DRAW_DECK.name().equals(id)) {
+                    if (button.getStyle() == ButtonStyle.SUCCESS) selectedCount++;
+                    trayButtons.add(button);
+                }
+            }
+        }
 
-        // If at max: disable unselected buttons; otherwise enable all
-        List<Button> finalTrayButtons = new ArrayList<>();
+        // Disable unselected buttons if at max
         int finalSelectedCount = selectedCount;
-        drawTray.getComponents().stream()
-                .filter(component -> component instanceof Button)
-                .map(component -> (Button) component)
-                .filter(button -> !DiscordObject.TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_DRAW_DECK.name().equals(Objects.requireNonNull(button.getId()).split(":")[0]))
-                .forEach(button -> finalTrayButtons.add(button.withDisabled(finalSelectedCount >= maxDraw && button.getStyle() == ButtonStyle.SECONDARY)));
+        List<Button> finalTrayButtons = trayButtons.stream()
+                .map(button -> button.withDisabled(finalSelectedCount >= maxDraw && button.getStyle() == ButtonStyle.SECONDARY))
+                .toList();
 
-        // Build the response
-        ButtonInteractionProcessor.DrawCardsMessage msg = ButtonInteractionProcessor.buildDrawCardsMessage(game, player, maxDraw, selectedCount, finalTrayButtons);
+        DiscordMessage msg = buildDrawCardsMessage(game, player, maxDraw, selectedCount, finalTrayButtons);
         event.editMessage(msg.content())
                 .setComponents(msg.components())
                 .queue();
@@ -920,7 +927,7 @@ public class ButtonInteractionProcessor {
         GameService.getInstance().confirmDrawCards(game, player, drawnCards);
     }
 
-    private static int parseMaxDrawMessage(String content) {
+    static int parseMaxDrawMessage(String content) {
         Matcher matcher = Pattern.compile("Draw up to \\*\\*(\\d+)\\*\\* cards").matcher(content);
         int maxDraw = matcher.find() ? Integer.parseInt(matcher.group(1)) : 1;
         logger.debug("Max draw found in message : " + maxDraw);
@@ -935,4 +942,43 @@ public class ButtonInteractionProcessor {
         }
         return 0;
     }
+
+    private static void discardEggToDrawCard(ButtonInteractionEvent event, Game game, Player player) {
+        // Build select options for all birds with eggs across all habitats
+        List<SelectOption> options = new ArrayList<>();
+        for (HabitatEnum habitat : HabitatEnum.values()) {
+            for (BirdCard bird : player.getBoard().getHabitat(habitat).getBirds()) {
+                int eggs = bird.getNest().getNumberOfEggs();
+                if (eggs > 0) {
+                    options.add(SelectOption.of(bird.getName(), bird.getName())
+                            .withDescription(habitat.getJsonValue() + " | " + eggs + " egg" + (eggs != 1 ? "s" : "")));
+                }
+            }
+        }
+
+        if (options.isEmpty()) {
+            event.reply("You don't have any birds with eggs to discard").setEphemeral(true).queue();
+            return;
+        }
+
+        StringSelectMenu selectMenu = StringSelectMenu.create(DiscordObject.TAKE_TURN_ACTION_CHOICE_DISCARD_EGGS_BIRD_SELECT_MENU.name() + ":" + game.getGameId())
+                .setPlaceholder("Pick a bird to remove an egg from")
+                .setMinValues(1)
+                .setMaxValues(1)
+                .addOptions(options)
+                .build();
+
+        // Replace the discard button row with the select menu, keep other rows
+        List<ActionRow> oldRows = event.getMessage().getActionRows();
+        List<ActionRow> newRows = List.of(
+                oldRows.get(0),              // draw tray/deck row
+                ActionRow.of(selectMenu),    // replace discard button
+                oldRows.get(2)               // submit row
+        );
+
+        event.editMessage(event.getMessage().getContentRaw())
+                .setComponents(newRows)
+                .queue();
+    }
+
 }

@@ -21,7 +21,9 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.ItemComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import util.LogLevel;
@@ -56,6 +58,7 @@ public class StringSelectInteractionProcessor {
             case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_SELECT_BIRD_SUB_MENU -> takeTurnActionChoicePlayBirdSelectBirdSubMenu(event, gameContext.game(), gameContext.player());
             case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_PICK_HABITAT -> takeTurnActionChoicePlayBirdPickHabitat(event, gameContext.game(), gameContext.player());
             case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_REMOVE_EGGS -> takeTurnActionChoicePlayBirdRemoveEggs(event, gameContext.game(), gameContext.player());
+            case TAKE_TURN_ACTION_CHOICE_DISCARD_EGGS_BIRD_SELECT_MENU -> discardEggFromBirdToDraw(event, gameContext.game(), gameContext.player());
             default -> logger.warn("Unmapped component: " + gameContext.componentId());
         }
     }
@@ -167,7 +170,7 @@ public class StringSelectInteractionProcessor {
     private static void gainFood(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
         int maxFood = currentPlayer.getBoard().getForest().getNumberOfFoodToGain();
 
-        ButtonInteractionProcessor.FeedPickerMessage picker = ButtonInteractionProcessor.buildFeedPickerMessage(currentGame, maxFood, "");
+        ButtonInteractionProcessor.DiscordMessage picker = ButtonInteractionProcessor.buildFeedPickerMessage(currentGame, maxFood, "");
         event.editMessage(picker.content())
                 .setComponents(picker.components())
                 .queue();
@@ -183,7 +186,7 @@ public class StringSelectInteractionProcessor {
         currentPlayer.getHand().resetTempEggs();
         int maxEggs = currentPlayer.getBoard().getGrassland().getNumberOfEggsToLay();
 
-        ButtonInteractionProcessor.LayEggsMessage msg = ButtonInteractionProcessor.buildLayEggsHabitatMessage(currentGame, currentPlayer, maxEggs);
+        ButtonInteractionProcessor.DiscordMessage msg = ButtonInteractionProcessor.buildLayEggsHabitatMessage(currentGame, currentPlayer, maxEggs);
         event.editMessage(msg.content())
                 .setComponents(msg.components())
                 .queue();
@@ -192,8 +195,9 @@ public class StringSelectInteractionProcessor {
     private static void drawCards(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
         int maxDraw = currentPlayer.getBoard().getWetland().getNumberOfCardsToDraw();
         currentPlayer.getHand().resetTempDrawnBirds();
+        currentPlayer.getBoard().getWetland().setNumberOfResourcesDiscarded(0);
 
-        ButtonInteractionProcessor.DrawCardsMessage msg = ButtonInteractionProcessor.buildDrawCardsMessage(currentGame, currentPlayer, maxDraw, 0);
+        ButtonInteractionProcessor.DiscordMessage msg = ButtonInteractionProcessor.buildDrawCardsMessage(currentGame, currentPlayer, maxDraw, 0);
         event.editMessage(msg.content())
                 .setComponents(msg.components())
                 .queue();
@@ -356,6 +360,57 @@ public class StringSelectInteractionProcessor {
                                     return component;
                                 }).toList()
                 )).toList();
+    }
+
+    private static void discardEggFromBirdToDraw(StringSelectInteractionEvent event, Game game, Player player) {
+        String birdName = event.getValues().get(0);
+
+        // Find the bird across all habitats
+        BirdCard bird = null;
+        for (HabitatEnum habitat : HabitatEnum.values()) {
+            for (BirdCard b : player.getBoard().getHabitat(habitat).getBirds()) {
+                if (b.getName().equals(birdName)) {
+                    bird = b;
+                    break;
+                }
+            }
+            if (bird != null) break;
+        }
+
+        if (bird == null || bird.getNest().getNumberOfEggs() <= 0) {
+            event.reply("Could not find a bird with eggs matching: " + birdName).setEphemeral(true).queue();
+            return;
+        }
+
+        // Remove 1 egg
+        bird.getNest().setNumberOfEggs(bird.getNest().getNumberOfEggs() - 1);
+
+        // Increment resources discarded on the wetland
+        player.getBoard().getWetland().setNumberOfResourcesDiscarded(
+                player.getBoard().getWetland().getNumberOfResourcesDiscarded() + 1);
+
+        // Parse maxDraw from message and increment
+        int maxDraw = ButtonInteractionProcessor.parseMaxDrawMessage(event.getMessage().getContentRaw()) + 1;
+
+        // Extract tray buttons from the draw tray/deck row (row 0), preserving selection state
+        ActionRow drawTrayRow = event.getMessage().getActionRows().get(0);
+        int selectedCount = player.getHand().getTempDrawnBirds().size();
+        List<Button> trayButtons = new ArrayList<>();
+        for (ItemComponent component : drawTrayRow.getComponents()) {
+            if (component instanceof Button button) {
+                String id = Objects.requireNonNull(button.getId()).split(":")[0];
+                if (!DiscordObject.TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_DRAW_DECK.name().equals(id)) {
+                    if (button.getStyle() == ButtonStyle.SUCCESS) selectedCount++;
+                    trayButtons.add(button);
+                }
+            }
+        }
+
+        // Rebuild draw cards UI with increased maxDraw
+        ButtonInteractionProcessor.DiscordMessage msg = ButtonInteractionProcessor.buildDrawCardsMessage(game, player, maxDraw, selectedCount, trayButtons);
+        event.editMessage(msg.content())
+                .setComponents(msg.components())
+                .queue();
     }
 
     private static void logSelected(StringSelectInteractionEvent event) {
