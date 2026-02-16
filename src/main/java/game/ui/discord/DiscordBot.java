@@ -2,6 +2,7 @@ package game.ui.discord;
 
 import game.service.DiscordBotService;
 import game.ui.discord.processors.ButtonInteractionProcessor;
+import game.ui.discord.processors.ModalInteractionProcessor;
 import game.ui.discord.processors.SlashCommandProcessor;
 import game.ui.discord.processors.StringSelectInteractionProcessor;
 import net.dv8tion.jda.api.JDA;
@@ -10,6 +11,7 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -72,6 +74,12 @@ public class DiscordBot extends ListenerAdapter {
     public void onStringSelectInteraction(StringSelectInteractionEvent event) {
         logger.io("onStringSelectInteraction -> " + event.getInteraction().getMessage());
         StringSelectInteractionProcessor.handleCommand(event);
+    }
+
+    @Override
+    public void onModalInteraction(ModalInteractionEvent event) {
+        logger.io("onModalInteraction -> " + event.getModalId());
+        ModalInteractionProcessor.handleCommand(event);
     }
 
     @Override

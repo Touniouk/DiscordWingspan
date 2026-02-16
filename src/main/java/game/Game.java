@@ -64,14 +64,14 @@ public class Game {
     }
 
     public Game(TextChannel gameChannel, int gameId, List<Expansion> expansions, User... players) {
-        this(gameChannel, 0, gameId, 5, 2, expansions, players);
+        this(gameChannel, 0, gameId, 5, 2, expansions.contains(Expansion.OCEANIA), expansions, players);
     }
 
     public Game(TextChannel gameChannel, long seed, int gameId, User... players) {
-        this(gameChannel, seed, gameId, 5, 2, List.of(Expansion.values()), players);
+        this(gameChannel, seed, gameId, 5, 2, true, List.of(Expansion.values()), players);
     }
 
-    public Game(TextChannel gameChannel, long seed, int gameId, int startingBirdHandSize, int startingBonusHandSize, List<Expansion> expansions, User... playerUsers) {
+    public Game(TextChannel gameChannel, long seed, int gameId, int startingBirdHandSize, int startingBonusHandSize, boolean withNectar, List<Expansion> expansions, User... playerUsers) {
         if (playerUsers.length == 0) {
             throw new IllegalArgumentException("Must provide at least one player name");
         }
@@ -85,9 +85,8 @@ public class Game {
         this.startingBirdHandSize = startingBirdHandSize;
         this.startingBonusHandSize = startingBonusHandSize;
 
-        boolean withNectar = expansions.contains(Expansion.OCEANIA);
-        logger.debug(String.format("Parameters:\nSeed : %s\nstartingBirdHandSize : %s\nstartingBonusHandSize : %s\nexpansions : %s\nplayers : %s",
-                GAME_SEED, startingBirdHandSize, startingBonusHandSize, expansions, StringUtil.getListAsString(Arrays.stream(playerUsers).map(User::getName).toList(), ", ")));
+        logger.debug(String.format("Parameters:\nSeed : %s\nstartingBirdHandSize : %s\nstartingBonusHandSize : %s\nwithNectar : %s\nexpansions : %s\nplayers : %s",
+                GAME_SEED, startingBirdHandSize, startingBonusHandSize, withNectar, expansions, StringUtil.getListAsString(Arrays.stream(playerUsers).map(User::getName).toList(), ", ")));
 
         logger.unnecessary("Setting up players");
         players = Arrays.stream(playerUsers)

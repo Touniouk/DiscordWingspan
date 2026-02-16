@@ -1,7 +1,9 @@
 package game.ui.discord.commands;
 
 import game.Game;
+import game.GameLobby;
 import game.Player;
+import game.components.enums.Expansion;
 import game.components.enums.FoodType;
 import game.components.subcomponents.BirdCard;
 import game.components.subcomponents.BonusCard;
@@ -9,8 +11,10 @@ import game.components.subcomponents.Card;
 import game.service.DiscordBotService;
 import game.service.GameService;
 import game.ui.discord.DiscordBot;
+import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.DiscordObject;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.unions.GuildChannelUnion;
@@ -19,25 +23,22 @@ import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import util.StringUtil;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class CreateGame implements SlashCommand {
 
     private static final String name = "create_game";
     private static final String description = "Start a game of Wingspan";
 
-    private static final String PARAM_PLAYER_1 = "player_1";
-    private static final String PARAM_PLAYER_2 = "player_2";
-    private static final String PARAM_PLAYER_3 = "player_3";
-    private static final String PARAM_PLAYER_4 = "player_4";
-    private static final String PARAM_PLAYER_5 = "player_5";
     private static final String PARAM_CHANNEL = "bot_channel";
-    private static final String PARAM_TEST_BOARD = "test_board";
 
     @Override
     public String getName() {
@@ -47,57 +48,127 @@ public class CreateGame implements SlashCommand {
     @Override
     public CommandData getCommandData() {
         return Commands.slash(name, description)
-                .addOption(OptionType.USER, PARAM_PLAYER_1, "The first player", true)
-                .addOption(OptionType.USER, PARAM_PLAYER_2, "The second player", false)
-                .addOption(OptionType.USER, PARAM_PLAYER_3, "The third player", false)
-                .addOption(OptionType.USER, PARAM_PLAYER_4, "The fourth player", false)
-                .addOption(OptionType.USER, PARAM_PLAYER_5, "The fifth player", false)
-                .addOption(OptionType.CHANNEL, PARAM_CHANNEL, "Which channel to play the game in", false)
-                .addOption(OptionType.BOOLEAN, PARAM_TEST_BOARD, "Test board with fake data", false);
+                .addOption(OptionType.CHANNEL, PARAM_CHANNEL, "Which channel to play the game in", false);
     }
 
     @Override
     public void handle(SlashCommandInteractionEvent event) {
-        List<User> playerList = Stream.of(PARAM_PLAYER_1, PARAM_PLAYER_2, PARAM_PLAYER_3, PARAM_PLAYER_4, PARAM_PLAYER_5)
-                .map(event::getOption)
-                .filter(Objects::nonNull)
-                .map(OptionMapping::getAsUser)
-                .toList();
-        if (playerList.stream().anyMatch(User::isBot)) {
-            event.reply("Bots can't play Wingspan!").setEphemeral(true).queue();
-            return;
-        }
         TextChannel gameChannel = Optional
                 .ofNullable(event.getOption(PARAM_CHANNEL))
                 .map(OptionMapping::getAsChannel)
                 .map(GuildChannelUnion::asTextChannel)
-                .orElse(DiscordBotService.getInstance().getJda().getTextChannelById(DiscordBot.DEFAULT_GAME_CHANNEL));
-        boolean testData = Optional.ofNullable(event.getOption(PARAM_TEST_BOARD)).map(OptionMapping::getAsBoolean).orElse(false);
+                .orElse(event.getChannel().asTextChannel());
 
-        Game game = GameService.getInstance().createGame(gameChannel, playerList);
-        String gameId = game.getGameId();
+        GameLobby lobby = GameService.getInstance().createLobby(event.getUser(), gameChannel);
 
-        if (testData) {
-            game.getPlayers().forEach(player -> addTestData(game, player));
+        MessageEmbed embed = buildLobbyEmbed(lobby);
+        List<ActionRow> components = buildLobbyComponents(lobby);
+
+        event.replyEmbeds(embed)
+                .setComponents(components)
+                .queue();
+    }
+
+    public static MessageEmbed buildLobbyEmbed(GameLobby lobby) {
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setColor(0x1abc9c);
+
+        String expansionNames = lobby.getExpansions().stream()
+                .map(Expansion::getLabel)
+                .collect(Collectors.joining(", "));
+        if (expansionNames.isEmpty()) expansionNames = "None";
+        embed.addField(Constants.LOBBY_EXPANSIONS_FIELD, expansionNames, false);
+
+        embed.addField(Constants.LOBBY_BOARD_FIELD, lobby.isNectarBoard() ? "Nectar Board" : "Standard Board", true);
+        embed.addField(Constants.LOBBY_SEED_FIELD, lobby.getSeed() == 0 ? "Random" : String.valueOf(lobby.getSeed()), true);
+        embed.addField(Constants.LOBBY_TEST_DATA_FIELD, lobby.isTestData() ? "On" : "Off", true);
+
+        if (lobby.isWaitingForPlayers()) {
+            embed.setTitle("\uD83C\uDFB2 Game Lobby");
+            String playerList = lobby.getPlayers().stream()
+                    .map(User::getAsMention)
+                    .collect(Collectors.joining("\n"));
+            embed.addField(Constants.LOBBY_PLAYERS_FIELD + " (" + lobby.getPlayers().size() + "/" + lobby.getPlayerCount() + ")",
+                    playerList, false);
+        } else {
+            embed.setTitle(Constants.LOBBY_TITLE);
+            embed.addField("\uD83D\uDC65 Player Count", String.valueOf(lobby.getPlayerCount()), true);
         }
 
-        Button takeTurnButton = Button.success(DiscordObject.PROMPT_PICK_HAND_BUTTON.name() + ":" + gameId, "\uD83D\uDC50 Pick Starting Hand");
-        Button seeFeederButton = Button.secondary(DiscordObject.PROMPT_SEE_FEEDER_BUTTON.name() + ":" + gameId, "\uD83C\uDFB2 See Feeder");
-        Button seeTrayButton = Button.secondary(DiscordObject.PROMPT_SEE_TRAY_BUTTON.name() + ":" + gameId, "\uD83D\uDC26 See Tray");
-        String playersAsMention = StringUtil.getListAsString(
-                GameService.getInstance().getGame(gameId)
-                        .getPlayers().stream()
-                        .map(p -> p.getUser().getAsMention())
-                        .toList(), "");
-        event.reply("Game `" + gameId + "` created with " + playersAsMention + "\n")
-                .addActionRow(takeTurnButton, seeFeederButton, seeTrayButton)
-                .queue();
+        return embed.build();
+    }
+
+    public static List<ActionRow> buildLobbyComponents(GameLobby lobby) {
+        if (lobby.isWaitingForPlayers()) {
+            return buildWaitingComponents(lobby);
+        }
+        return buildConfigComponents(lobby);
+    }
+
+    private static List<ActionRow> buildConfigComponents(GameLobby lobby) {
+        String lobbyId = lobby.getLobbyId();
+
+        // Row 1: Expansion multi-select menu
+        List<SelectOption> expansionOptions = Arrays.stream(Expansion.values())
+                .map(exp -> {
+                    SelectOption opt = SelectOption.of(exp.getLabel(), exp.name());
+                    if (lobby.getExpansions().contains(exp)) {
+                        opt = opt.withDefault(true);
+                    }
+                    return opt;
+                })
+                .toList();
+
+        StringSelectMenu expansionMenu = StringSelectMenu.create(DiscordObject.CREATE_GAME_EXPANSION_SELECT_MENU.name() + ":" + lobbyId)
+                .setPlaceholder("Select expansions")
+                .setMinValues(0)
+                .setMaxValues(Expansion.values().length)
+                .addOptions(expansionOptions)
+                .build();
+
+        // Row 2: Board type + Test data + Set seed buttons
+        Button boardTypeButton = lobby.isNectarBoard()
+                ? Button.success(DiscordObject.CREATE_GAME_BOARD_TYPE_BUTTON.name() + ":" + lobbyId, "\uD83C\uDF0D Nectar Board")
+                : Button.secondary(DiscordObject.CREATE_GAME_BOARD_TYPE_BUTTON.name() + ":" + lobbyId, "\uD83C\uDF0D Standard Board");
+
+        Button testDataButton = lobby.isTestData()
+                ? Button.success(DiscordObject.CREATE_GAME_TEST_DATA_BUTTON.name() + ":" + lobbyId, "\uD83E\uDDEA Test Data")
+                : Button.secondary(DiscordObject.CREATE_GAME_TEST_DATA_BUTTON.name() + ":" + lobbyId, "\uD83E\uDDEA Test Data");
+
+        Button setSeedButton = Button.primary(DiscordObject.CREATE_GAME_SET_SEED_BUTTON.name() + ":" + lobbyId, "\uD83C\uDFB2 Set Seed");
+
+        // Row 3: Player count - / + buttons
+        Button decrementButton = Button.secondary(DiscordObject.CREATE_GAME_PLAYER_COUNT_DECREMENT.name() + ":" + lobbyId, "\u2796 Players")
+                .withDisabled(lobby.getPlayerCount() <= 1);
+        Button incrementButton = Button.secondary(DiscordObject.CREATE_GAME_PLAYER_COUNT_INCREMENT.name() + ":" + lobbyId, "\u2795 Players")
+                .withDisabled(lobby.getPlayerCount() >= Constants.LOBBY_MAX_PLAYERS);
+
+        // Row 4: Create Game button
+        Button startButton = Button.success(DiscordObject.CREATE_GAME_START_BUTTON.name() + ":" + lobbyId, "\uD83D\uDE80 Create Game");
+
+        return List.of(
+                ActionRow.of(expansionMenu),
+                ActionRow.of(boardTypeButton, testDataButton, setSeedButton),
+                ActionRow.of(decrementButton, incrementButton),
+                ActionRow.of(startButton)
+        );
+    }
+
+    private static List<ActionRow> buildWaitingComponents(GameLobby lobby) {
+        String lobbyId = lobby.getLobbyId();
+
+        Button joinButton = Button.success(DiscordObject.CREATE_GAME_JOIN_BUTTON.name() + ":" + lobbyId, "\u2705 Join Game");
+        Button leaveButton = Button.danger(DiscordObject.CREATE_GAME_LEAVE_BUTTON.name() + ":" + lobbyId, "\u274C Leave Game");
+
+        return List.of(
+                ActionRow.of(joinButton, leaveButton)
+        );
     }
 
     /**
      * Add test data for the player creating the game
      */
-    private void addTestData(Game game, Player player) {
+    public static void addTestData(Game game, Player player) {
         if (game.getPlayers().size() != 1) {
             return;
         }
@@ -125,7 +196,7 @@ public class CreateGame implements SlashCommand {
 
     private EmbedBuilder getStartingHandBirdsEmbed(List<BirdCard> birds) {
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle(StringUtil.replacePlaceholders("️[bird] Birds starting hand"));
+        embed.setTitle(StringUtil.replacePlaceholders("\u200D[bird] Birds starting hand"));
         embed.setColor(0x1abc9c);
 
         birds.sort(Comparator.comparing(Card::getName));
@@ -137,7 +208,7 @@ public class CreateGame implements SlashCommand {
 
     private EmbedBuilder getStartingHandBonusEmbed(List<BonusCard> bonusCards) {
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle(StringUtil.replacePlaceholders("️[bonus-card] Bonus starting hand"));
+        embed.setTitle(StringUtil.replacePlaceholders("\u200D[bonus-card] Bonus starting hand"));
         embed.setColor(0x32cd32);
 
         bonusCards.sort(Comparator.comparing(Card::getName));

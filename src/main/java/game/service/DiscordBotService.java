@@ -1,6 +1,7 @@
 package game.service;
 
 import game.Game;
+import game.GameLobby;
 import game.Player;
 import game.exception.GameInputException;
 import game.ui.discord.enumeration.Constants;
@@ -10,6 +11,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import util.LogLevel;
 import util.Logger;
@@ -102,6 +104,47 @@ public class DiscordBotService {
             event.reply(ex.getMessage()).setEphemeral(true).queue();
             return Optional.empty();
         }
+    }
+
+    // ======================== LOBBY CONTEXT ========================
+
+    /** Holds resolved context from a Discord lobby interaction. */
+    public record LobbyContext(String componentId, String lobbyId, GameLobby lobby) {}
+
+    /**
+     * Resolves the lobby context from a component interaction event (button/select menu).
+     * Parses the component ID to extract the lobby ID.
+     *
+     * @return the resolved context, or empty if the lobby could not be found
+     */
+    public static Optional<LobbyContext> resolveLobbyContext(GenericComponentInteractionCreateEvent event) {
+        String[] arr = event.getComponentId().split(":");
+        String componentId = arr[0];
+        String lobbyId = arr[1];
+        GameLobby lobby = GameService.getInstance().getLobby(lobbyId);
+        if (lobby == null) {
+            event.reply("This game lobby no longer exists.").setEphemeral(true).queue();
+            return Optional.empty();
+        }
+        return Optional.of(new LobbyContext(componentId, lobbyId, lobby));
+    }
+
+    /**
+     * Resolves the lobby context from a modal interaction event.
+     * Parses the modal ID to extract the lobby ID.
+     *
+     * @return the resolved context, or empty if the lobby could not be found
+     */
+    public static Optional<LobbyContext> resolveLobbyContext(ModalInteractionEvent event) {
+        String[] arr = event.getModalId().split(":");
+        String componentId = arr[0];
+        String lobbyId = arr[1];
+        GameLobby lobby = GameService.getInstance().getLobby(lobbyId);
+        if (lobby == null) {
+            event.reply("This game lobby no longer exists.").setEphemeral(true).queue();
+            return Optional.empty();
+        }
+        return Optional.of(new LobbyContext(componentId, lobbyId, lobby));
     }
 
     /**

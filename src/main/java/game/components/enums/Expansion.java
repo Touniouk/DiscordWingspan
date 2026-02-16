@@ -1,5 +1,7 @@
 package game.components.enums;
 
+import lombok.Getter;
+
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -7,6 +9,7 @@ import java.util.stream.Collectors;
 /**
  * Wingspan game expansions and promo packs. Used to filter cards by expansion during game setup.
  */
+@Getter
 public enum Expansion {
     BASE("Base Game", "originalcore"),
     SWIFT_START("Swift Start", "swiftstart"),

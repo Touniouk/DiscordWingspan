@@ -1,7 +1,9 @@
 package game.ui.discord.processors;
 
 import game.Game;
+import game.GameLobby;
 import game.Player;
+import game.components.enums.Expansion;
 import game.components.enums.FoodType;
 import game.components.enums.HabitatEnum;
 import game.components.meta.BoardAction;
@@ -12,6 +14,7 @@ import game.components.subcomponents.Card;
 import game.exception.GameInputException;
 import game.service.DiscordBotService;
 import game.service.GameService;
+import game.ui.discord.commands.CreateGame;
 import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.DiscordObject;
 import game.ui.discord.enumeration.EmojiEnum;
@@ -46,6 +49,15 @@ public class StringSelectInteractionProcessor {
 
     public static void handleCommand(StringSelectInteractionEvent event) {
         logSelected(event);
+
+        String rawComponentId = event.getComponentId().split(":")[0];
+
+        // Route lobby interactions before resolving game context
+        if (rawComponentId.startsWith("CREATE_GAME_")) {
+            handleLobbySelect(event);
+            return;
+        }
+
         Optional<DiscordBotService.GameContext> gameContextOptional = DiscordBotService.resolveGameContext(event);
         if (gameContextOptional.isEmpty()) return;
         DiscordBotService.GameContext gameContext = gameContextOptional.get();
@@ -417,5 +429,34 @@ public class StringSelectInteractionProcessor {
         logger.ridiculous(event.getUser().getName() + " selected " + event.getValues().stream()
                 .map(String::toUpperCase)
                 .collect(Collectors.joining(", ")));
+    }
+
+    // ======================== LOBBY HANDLERS ========================
+
+    private static void handleLobbySelect(StringSelectInteractionEvent event) {
+        Optional<DiscordBotService.LobbyContext> lobbyContextOptional = DiscordBotService.resolveLobbyContext(event);
+        if (lobbyContextOptional.isEmpty()) return;
+        DiscordBotService.LobbyContext ctx = lobbyContextOptional.get();
+
+        if (event.getUser().getIdLong() != ctx.lobby().getCreator().getIdLong()) {
+            event.reply("Only the game creator can change settings.").setEphemeral(true).queue();
+            return;
+        }
+
+        if (DiscordObject.valueOf(ctx.componentId()) == DiscordObject.CREATE_GAME_EXPANSION_SELECT_MENU) {
+            updateExpansions(event, ctx.lobby());
+        } else {
+            logger.warn("Unmatched lobby select: " + ctx.componentId());
+        }
+    }
+
+    private static void updateExpansions(StringSelectInteractionEvent event, GameLobby lobby) {
+        List<Expansion> selected = event.getValues().stream()
+                .map(Expansion::valueOf)
+                .collect(Collectors.toList());
+        lobby.setExpansions(selected);
+        event.editMessageEmbeds(CreateGame.buildLobbyEmbed(lobby))
+                .setComponents(CreateGame.buildLobbyComponents(lobby))
+                .queue();
     }
 }

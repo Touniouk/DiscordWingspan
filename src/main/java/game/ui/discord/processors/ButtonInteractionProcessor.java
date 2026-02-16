@@ -1,7 +1,9 @@
 package game.ui.discord.processors;
 
 import game.Game;
+import game.GameLobby;
 import game.Player;
+import game.components.enums.Expansion;
 import game.components.enums.FoodType;
 import game.components.enums.HabitatEnum;
 import game.components.meta.BoardAction;
@@ -16,6 +18,7 @@ import game.ui.discord.enumeration.DiscordObject;
 import game.ui.discord.enumeration.EmojiEnum;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
@@ -24,6 +27,9 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
+import net.dv8tion.jda.api.interactions.components.text.TextInput;
+import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
+import net.dv8tion.jda.api.interactions.modals.Modal;
 import util.LogLevel;
 import util.Logger;
 import util.StringUtil;
@@ -45,6 +51,14 @@ public class ButtonInteractionProcessor {
     private static final Logger logger = new Logger(ButtonInteractionProcessor.class, LogLevel.ALL);
 
     public static void handleCommand(ButtonInteractionEvent event) {
+        String rawComponentId = event.getComponentId().split(":")[0];
+
+        // Route lobby interactions before resolving game context
+        if (rawComponentId.startsWith("CREATE_GAME_")) {
+            handleLobbyButton(event);
+            return;
+        }
+
         Optional<DiscordBotService.GameContext> gameContextOptional = DiscordBotService.resolveGameContext(event);
         if (gameContextOptional.isEmpty()) return;
         DiscordBotService.GameContext gameContext = gameContextOptional.get();
@@ -978,6 +992,147 @@ public class ButtonInteractionProcessor {
 
         event.editMessage(event.getMessage().getContentRaw())
                 .setComponents(newRows)
+                .queue();
+    }
+
+    // ======================== LOBBY HANDLERS ========================
+
+    private static void handleLobbyButton(ButtonInteractionEvent event) {
+        Optional<DiscordBotService.LobbyContext> lobbyContextOptional = DiscordBotService.resolveLobbyContext(event);
+        if (lobbyContextOptional.isEmpty()) return;
+        DiscordBotService.LobbyContext ctx = lobbyContextOptional.get();
+        GameLobby lobby = ctx.lobby();
+
+        switch (DiscordObject.valueOf(ctx.componentId())) {
+            // Config phase (creator only)
+            case CREATE_GAME_BOARD_TYPE_BUTTON -> withCreatorCheck(event, lobby, () -> toggleBoardType(event, lobby));
+            case CREATE_GAME_TEST_DATA_BUTTON -> withCreatorCheck(event, lobby, () -> toggleTestData(event, lobby));
+            case CREATE_GAME_SET_SEED_BUTTON -> withCreatorCheck(event, lobby, () -> openSeedModal(event, lobby));
+            case CREATE_GAME_PLAYER_COUNT_DECREMENT -> withCreatorCheck(event, lobby, () -> changePlayerCount(event, lobby, -1));
+            case CREATE_GAME_PLAYER_COUNT_INCREMENT -> withCreatorCheck(event, lobby, () -> changePlayerCount(event, lobby, 1));
+            case CREATE_GAME_START_BUTTON -> withCreatorCheck(event, lobby, () -> createLobby(event, lobby));
+            // Waiting phase (anyone)
+            case CREATE_GAME_JOIN_BUTTON -> joinGame(event, lobby);
+            case CREATE_GAME_LEAVE_BUTTON -> leaveGame(event, lobby);
+            default -> logger.warn("Unmatched lobby button: " + ctx.componentId());
+        }
+    }
+
+    private static void withCreatorCheck(ButtonInteractionEvent event, GameLobby lobby, Runnable action) {
+        if (event.getUser().getIdLong() != lobby.getCreator().getIdLong()) {
+            event.reply("Only the game creator can change settings.").setEphemeral(true).queue();
+            return;
+        }
+        action.run();
+    }
+
+    private static void toggleBoardType(ButtonInteractionEvent event, GameLobby lobby) {
+        lobby.setNectarBoard(!lobby.isNectarBoard());
+        reRenderLobby(event, lobby);
+    }
+
+    private static void toggleTestData(ButtonInteractionEvent event, GameLobby lobby) {
+        lobby.setTestData(!lobby.isTestData());
+        reRenderLobby(event, lobby);
+    }
+
+    private static void openSeedModal(ButtonInteractionEvent event, GameLobby lobby) {
+        TextInput seedInput = TextInput.create("seed_value", "Seed (number, or leave blank for random)", TextInputStyle.SHORT)
+                .setRequired(false)
+                .setPlaceholder("e.g. 12345")
+                .build();
+
+        Modal modal = Modal.create(DiscordObject.CREATE_GAME_SET_SEED_BUTTON.name() + ":" + lobby.getLobbyId(), "Set Game Seed")
+                .addActionRow(seedInput)
+                .build();
+
+        event.replyModal(modal).queue();
+    }
+
+    private static void changePlayerCount(ButtonInteractionEvent event, GameLobby lobby, int delta) {
+        int newCount = lobby.getPlayerCount() + delta;
+        if (newCount < 1 || newCount > Constants.LOBBY_MAX_PLAYERS) {
+            event.deferEdit().queue();
+            return;
+        }
+        lobby.setPlayerCount(newCount);
+        reRenderLobby(event, lobby);
+    }
+
+    private static void createLobby(ButtonInteractionEvent event, GameLobby lobby) {
+        if (lobby.getPlayerCount() == 1) {
+            // Solo game: start immediately
+            launchGame(event, lobby);
+            return;
+        }
+        lobby.setWaitingForPlayers(true);
+        reRenderLobby(event, lobby);
+    }
+
+    private static void joinGame(ButtonInteractionEvent event, GameLobby lobby) {
+        User user = event.getUser();
+        if (user.isBot()) {
+            event.reply("Bots can't play Wingspan!").setEphemeral(true).queue();
+            return;
+        }
+        if (lobby.getPlayers().stream().anyMatch(p -> p.getIdLong() == user.getIdLong())) {
+            event.reply("You have already joined this game.").setEphemeral(true).queue();
+            return;
+        }
+        if (lobby.getPlayers().size() >= lobby.getPlayerCount()) {
+            event.reply("This game is full.").setEphemeral(true).queue();
+            return;
+        }
+        lobby.getPlayers().add(user);
+
+        // Auto-start when full
+        if (lobby.getPlayers().size() >= lobby.getPlayerCount()) {
+            launchGame(event, lobby);
+            return;
+        }
+        reRenderLobby(event, lobby);
+    }
+
+    private static void leaveGame(ButtonInteractionEvent event, GameLobby lobby) {
+        User user = event.getUser();
+        if (user.getIdLong() == lobby.getCreator().getIdLong()) {
+            event.reply("The game creator cannot leave.").setEphemeral(true).queue();
+            return;
+        }
+        boolean removed = lobby.getPlayers().removeIf(p -> p.getIdLong() == user.getIdLong());
+        if (!removed) {
+            event.reply("You are not in this game.").setEphemeral(true).queue();
+            return;
+        }
+        reRenderLobby(event, lobby);
+    }
+
+    private static void launchGame(ButtonInteractionEvent event, GameLobby lobby) {
+        boolean testData = lobby.isTestData();
+        Game game = GameService.getInstance().createGameFromLobby(lobby);
+        String gameId = game.getGameId();
+
+        if (testData) {
+            game.getPlayers().forEach(player -> CreateGame.addTestData(game, player));
+        }
+
+        Button pickHandButton = Button.success(DiscordObject.PROMPT_PICK_HAND_BUTTON.name() + ":" + gameId, "\uD83D\uDC50 Pick Starting Hand");
+        Button seeFeederButton = Button.secondary(DiscordObject.PROMPT_SEE_FEEDER_BUTTON.name() + ":" + gameId, "\uD83C\uDFB2 See Feeder");
+        Button seeTrayButton = Button.secondary(DiscordObject.PROMPT_SEE_TRAY_BUTTON.name() + ":" + gameId, "\uD83D\uDC26 See Tray");
+
+        String playersAsMention = game.getPlayers().stream()
+                .map(p -> p.getUser().getAsMention())
+                .collect(Collectors.joining(" "));
+
+        event.editMessage("Game `" + gameId + "` created with " + playersAsMention + "\n")
+                .setEmbeds()
+                .setComponents(ActionRow.of(pickHandButton, seeFeederButton, seeTrayButton))
+                .queue();
+    }
+
+    private static void reRenderLobby(ButtonInteractionEvent event, GameLobby lobby) {
+        event.editMessageEmbeds(CreateGame.buildLobbyEmbed(lobby))
+                .setComponents(CreateGame.buildLobbyComponents(lobby))
                 .queue();
     }
 

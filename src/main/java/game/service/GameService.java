@@ -1,7 +1,9 @@
 package game.service;
 
 import game.Game;
+import game.GameLobby;
 import game.Player;
+import game.components.enums.Expansion;
 import game.components.enums.FoodType;
 import game.components.enums.HabitatEnum;
 import game.components.meta.GameAction;
@@ -34,12 +36,48 @@ public class GameService {
 
     @Getter
     private Map<String, Game> activeGames = new HashMap<>();
+    private Map<String, GameLobby> activeLobbies = new HashMap<>();
+    private int lobbyCounter = 0;
 
     private GameService() {}
 
     public static GameService getInstance() {
         return INSTANCE;
     }
+
+    // ======================== LOBBY MANAGEMENT ========================
+
+    public GameLobby createLobby(User creator, TextChannel channel) {
+        String lobbyId = "lobby-" + lobbyCounter++;
+        GameLobby lobby = new GameLobby(lobbyId, creator, channel);
+        activeLobbies.put(lobbyId, lobby);
+        logger.info("Created lobby " + lobbyId + " by " + creator.getName());
+        return lobby;
+    }
+
+    public GameLobby getLobby(String lobbyId) {
+        return activeLobbies.get(lobbyId);
+    }
+
+    public void removeLobby(String lobbyId) {
+        activeLobbies.remove(lobbyId);
+    }
+
+    public Game createGameFromLobby(GameLobby lobby) {
+        List<Expansion> expansions = lobby.getExpansions();
+        boolean withNectar = lobby.isNectarBoard();
+        long seed = lobby.getSeed();
+        User[] playerUsers = lobby.getPlayers().toArray(new User[0]);
+
+        Game game = new Game(lobby.getGameChannel(), seed, activeGames.values().size(),
+                5, 2, withNectar, expansions, playerUsers);
+        activeGames.put(game.getGameId(), game);
+        removeLobby(lobby.getLobbyId());
+        game.startGame();
+        return game;
+    }
+
+    // ======================== GAME MANAGEMENT ========================
 
     /**
      * Creates a new game in the given channel with the provided players and starts it.

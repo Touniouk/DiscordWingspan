@@ -25,4 +25,13 @@ public class Constants {
     public static final String LAY_EGGS_REMAINING = "Eggs remaining: ";
     public static final String DRAW_CARDS = "**" + EmojiEnum.CARD.getEmoteId() + " Draw cards: **";
     public static final String DISCARD_RESOURCES = "\uD83D\uDD04 Discard resources";
+
+    // Lobby constants
+    public static final String LOBBY_TITLE = "\uD83C\uDFB2 Game Setup";
+    public static final String LOBBY_EXPANSIONS_FIELD = "\uD83C\uDFB4 Expansions";
+    public static final String LOBBY_BOARD_FIELD = "\uD83C\uDF0D Board";
+    public static final String LOBBY_SEED_FIELD = "\uD83C\uDFB2 Seed";
+    public static final String LOBBY_TEST_DATA_FIELD = "\uD83E\uDDEA Test Data";
+    public static final String LOBBY_PLAYERS_FIELD = "\uD83D\uDC65 Players";
+    public static final int LOBBY_MAX_PLAYERS = 5;
 }

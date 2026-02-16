@@ -103,10 +103,13 @@ src/main/resources/
 
 ## TODO
 
+- [ ] Creating a game
+  - [x] Instead of using the command, have the values editable with buttons and stuff
+  - [ ] Set active game and use that as the game id param
 - [x] Implement playing bird
-    - [x] Disable +- buttons when spending food
-    - [ ] If bird can only go in one habitat, add it automatically
-    - [ ] Add food cost to message
+  - [x] Disable +- buttons when spending food
+  - [ ] If bird can only go in one habitat, add it automatically
+  - [ ] Add food cost to message
 - [x] Implement gaining food
 - [x] Implement laying eggs
 - [x] Implement drawing cards
