@@ -14,4 +14,6 @@ public class Card {
     private String name;
     private Expansion expansion;
     private boolean selected = false;
+
+    private boolean tempDiscarded = false;
 }

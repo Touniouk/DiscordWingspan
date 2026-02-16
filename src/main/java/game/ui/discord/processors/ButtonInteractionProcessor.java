@@ -98,6 +98,7 @@ public class ButtonInteractionProcessor {
                      TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_3,
                      TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_DIE_4 -> toggleGainFoodDie(event, gameContext.game());
                 case TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_SUBMIT_BUTTON -> submitGainFood(event, gameContext.game(), gameContext.player());
+                case TAKE_TURN_ACTION_DISCARD_CARDS -> discardCardToGainFood(event, gameContext.game(), gameContext.player());
                 case TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_REROLL_BUTTON -> rerollFeeder(event, gameContext.game(), gameContext.player());
 
                 // Lay Eggs buttons
@@ -303,14 +304,14 @@ public class ButtonInteractionProcessor {
 
     // ======================== GAIN FOOD ========================
 
-    private static int parseMaxFoodFromMessage(String content) {
+    static int parseMaxFoodFromMessage(String content) {
         Matcher matcher = Pattern.compile("Pick up to \\*\\*(\\d+)\\*\\* food").matcher(content);
         int maxFood = matcher.find() ? Integer.parseInt(matcher.group(1)) : 1;
         logger.debug("Max food found in message : " + maxFood);
         return maxFood;
     }
 
-    private static String parsePreviouslyGainedFood(String content) {
+    static String parsePreviouslyGainedFood(String content) {
         int feederIdx = content.indexOf(Constants.CHOOSE_FOOD_FROM_FEEDER);
         if (feederIdx < 0) return "";
         String afterFeeder = content.substring(feederIdx + Constants.CHOOSE_FOOD_FROM_FEEDER.length());
@@ -431,26 +432,23 @@ public class ButtonInteractionProcessor {
             }
         }
 
+        Button submitButton = Button.success(DiscordObject.TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_SUBMIT_BUTTON.name() + ":" + game.getGameId(), Constants.SUBMIT_SELECTION);
         event.editMessage(messageContent)
-                .setComponents(ActionRow.of(finalDieButtons), ActionRow.of(bottomRowButtons))
+                .setComponents(ActionRow.of(finalDieButtons), ActionRow.of(bottomRowButtons), ActionRow.of(submitButton))
                 .queue();
     }
 
-    static DiscordMessage buildFeedPickerMessage(Game game, int maxFood, String foodGainedSoFar) {
+    static DiscordMessage buildFeedPickerMessage(Game game, Player player, int maxFood, String foodGainedSoFar) {
         List<Die> dice = game.getFeeder().getDiceInFeeder();
         String gameId = game.getGameId();
 
+        // The dice in the birdfeeder
         List<Button> dieButtons = new ArrayList<>();
         for (int i = 0; i < dice.size(); i++) {
             DieFace face = dice.get(i).getVisibleFace();
             dieButtons.add(Button.secondary(DiscordObject.GAIN_FOOD_DIE_IDS[i].name() + ":" + gameId, face.getLabel())
                     .withEmoji(Emoji.fromFormatted(EmojiEnum.getFirstEmojiFromDieFace(face))));
         }
-
-        Button submitButton = Button.success(DiscordObject.TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_SUBMIT_BUTTON.name() + ":" + gameId, Constants.SUBMIT_SELECTION);
-        Button rerollButton = Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_REROLL_BUTTON.name() + ":" + gameId, "\uD83C\uDFB2 Reroll Feeder")
-                .withDisabled(game.getFeeder().canBeRerolled());
-
         boolean hasDualFoodDie = dice.stream().anyMatch(die -> die.getVisibleFace().isDualFood());
         String message = Constants.PICK_ACTION + "Gain Food\n\n" +
                 Constants.CHOOSE_FOOD_FROM_FEEDER + "Pick up to **" + maxFood + "** food";
@@ -461,7 +459,21 @@ public class ButtonInteractionProcessor {
             message += "\n" + foodGainedSoFar;
         }
 
-        List<ActionRow> rows = List.of(ActionRow.of(dieButtons), ActionRow.of(submitButton, rerollButton));
+        // The button to discard cards for more food
+        int numberOfResourcesToDiscard = player.getBoard().getForest().getNumberOfResourcesToDiscard();
+        int numberOfResourcesDiscarded = player.getBoard().getForest().getNumberOfResourcesDiscarded();
+        logger.ridiculous(player.getUser().getName() + ": resources to discard = " + numberOfResourcesToDiscard + ", numberOfResourcesDiscarded = " + numberOfResourcesDiscarded);
+        Button discardCardsButton = Button.secondary(DiscordObject.TAKE_TURN_ACTION_DISCARD_CARDS + ":" + game.getGameId(), Constants.DISCARD_RESOURCES)
+                .withDisabled(numberOfResourcesDiscarded >= numberOfResourcesToDiscard);
+
+        Button submitButton = Button.success(DiscordObject.TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_SUBMIT_BUTTON.name() + ":" + gameId, Constants.SUBMIT_SELECTION);
+        Button rerollButton = Button.primary(DiscordObject.TAKE_TURN_ACTION_CHOICE_GAIN_FOOD_REROLL_BUTTON.name() + ":" + gameId, "\uD83C\uDFB2 Reroll Feeder")
+                .withDisabled(!game.getFeeder().canBeRerolled());
+
+        List<ActionRow> rows = List.of(
+                ActionRow.of(dieButtons),
+                ActionRow.of(discardCardsButton, rerollButton),
+                ActionRow.of(submitButton));
         return new DiscordMessage(message, rows);
     }
 
@@ -556,6 +568,38 @@ public class ButtonInteractionProcessor {
         return (previousFood + " " + foodGained.toString().trim()).trim();
     }
 
+    private static void discardCardToGainFood(ButtonInteractionEvent event, Game game, Player player) {
+        // Build select options for all food in hand
+        List<SelectOption> options = player.getHand().getBirdCards().stream()
+                .map(bird -> SelectOption.of(bird.getName(), bird.getName())
+                        .withDescription(bird.getVeryShortDescription()))
+                .toList();
+
+        if (options.isEmpty()) {
+            event.reply("You don't have any cards").setEphemeral(true).queue();
+            return;
+        }
+
+        StringSelectMenu selectMenu = StringSelectMenu.create(DiscordObject.TAKE_TURN_ACTION_CHOICE_DISCARD_CARDS_BIRD_SELECT_MENU.name() + ":" + game.getGameId())
+                .setPlaceholder("Pick a card to discard")
+                .setMinValues(1)
+                .setMaxValues(1)
+                .addOptions(options)
+                .build();
+
+        // Replace the discard button row with the select menu, keep other rows
+        List<ActionRow> oldRows = event.getMessage().getActionRows();
+        List<ActionRow> newRows = List.of(
+                oldRows.get(0),              // dice buttons
+                ActionRow.of(selectMenu),    // replace discard button
+                oldRows.get(2)               // submit row
+        );
+
+        event.editMessage(event.getMessage().getContentRaw())
+                .setComponents(newRows)
+                .queue();
+    }
+
     /**
      * Handles a feeder reroll. Resolves the player's current die selections, removes those dice,
      * adds the food to the player's pantry, reduces the remaining pick count, rerolls the feeder,
@@ -566,7 +610,6 @@ public class ButtonInteractionProcessor {
      * @param currentPlayer the player re-rolling the feeder
      */
     private static void rerollFeeder(ButtonInteractionEvent event, Game currentGame, Player currentPlayer) {
-
         Map<Integer, FoodType> foodChoices = resolveFoodChoices(event, currentGame);
         String allFood = accumulateFoodGained(event, currentPlayer, foodChoices);
         List<Integer> selectedIndices = new ArrayList<>(foodChoices.keySet());
@@ -578,7 +621,7 @@ public class ButtonInteractionProcessor {
         // Actually reset the feeder
         currentGame.getFeeder().reRollFeeder();
 
-        DiscordMessage picker = buildFeedPickerMessage(currentGame, maxFood, allFood);
+        DiscordMessage picker = buildFeedPickerMessage(currentGame, currentPlayer, maxFood, allFood);
         event.editMessage(picker.content())
                 .setComponents(picker.components())
                 .queue();
@@ -706,12 +749,11 @@ public class ButtonInteractionProcessor {
         Button backButton = Button.secondary(DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_BACK_BUTTON.name() + ":" + gameId, "\uD83D\uDD19 Back");
         Button submitButton = Button.success(DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_SUBMIT_BUTTON.name() + ":" + gameId, Constants.SUBMIT_SELECTION);
 
-        List<ActionRow> rows = new ArrayList<>();
-        rows.add(ActionRow.of(addButtons));
-        rows.add(ActionRow.of(removeButtons));
-        rows.add(ActionRow.of(backButton, submitButton));
-
-        return new DiscordMessage(content.toString(), rows);
+        return new DiscordMessage(content.toString(), List.of(
+                ActionRow.of(addButtons),
+                ActionRow.of(removeButtons),
+                ActionRow.of(backButton, submitButton))
+        );
     }
 
     private static int resolveBirdIndex(String buttonComponentId) {
@@ -783,6 +825,42 @@ public class ButtonInteractionProcessor {
                 .queue();
     }
 
+    private static void discardFoodToLayEggs(ButtonInteractionEvent event, Game game, Player player) {
+
+        // TODO: discard food to klay more eggs
+
+        // Build select options for all food in hand
+        List<SelectOption> options = player.getHand().getPantry().entrySet().stream()
+                .filter(entry -> entry.getValue() != 0)
+                .map(f -> SelectOption.of(f.getKey().getDisplayName(), f.getKey().name())
+                        .withDescription(f.getValue() + " remaining in hand"))
+                .toList();
+
+        if (options.isEmpty()) {
+            event.reply("You don't have any food").setEphemeral(true).queue();
+            return;
+        }
+
+        StringSelectMenu selectMenu = StringSelectMenu.create(DiscordObject.TAKE_TURN_ACTION_CHOICE_DISCARD_CARDS_BIRD_SELECT_MENU.name() + ":" + game.getGameId())
+                .setPlaceholder("Pick a food to discard")
+                .setMinValues(1)
+                .setMaxValues(1)
+                .addOptions(options)
+                .build();
+
+        // Replace the discard button row with the select menu, keep other rows
+        List<ActionRow> oldRows = event.getMessage().getActionRows();
+        List<ActionRow> newRows = List.of(
+                oldRows.get(0),              // dice buttons
+                ActionRow.of(selectMenu),    // replace discard button
+                oldRows.get(2)               // submit row
+        );
+
+        event.editMessage(event.getMessage().getContentRaw())
+                .setComponents(newRows)
+                .queue();
+    }
+
     private static void submitLayEggs(ButtonInteractionEvent event, Game game, Player player) {
         int totalEggs = player.getHand().getTotalTempEggs();
         player.getHand().confirmLayEggs();
@@ -798,6 +876,7 @@ public class ButtonInteractionProcessor {
     // ======================== DRAW CARDS ========================
 
     public static DiscordMessage buildDrawCardsMessage(Game game, Player player, int maxDraw, int selectedCount) {
+        // The buttons representing the tray birds
         List<Button> drawTrayButtons = new ArrayList<>();
         for (int i = 0; i < DiscordObject.DRAW_FROM_TRAY_IDS.length; i++) {
             drawTrayButtons.add(Button.secondary(DiscordObject.DRAW_FROM_TRAY_IDS[i] + ":" + game.getGameId(), game.getBirdDeck().getTray()[i].getName())
@@ -812,6 +891,7 @@ public class ButtonInteractionProcessor {
                 .withEmoji(Emoji.fromFormatted(EmojiEnum.CARD.getEmoteId()))
                 .withDisabled(selectedCount >= maxDraw);
 
+        // The text summarising the action
         String drawnBirds = player.getHand().getTempDrawnBirds().isEmpty() ?
                 "Drawn: (nothing yet)" :
                 "Drawn: " + player.getHand().getTempDrawnBirds().stream()
@@ -822,6 +902,7 @@ public class ButtonInteractionProcessor {
                 "Cards remaining: " + (maxDraw - selectedCount) + "\n\n" +
                 drawnBirds;
 
+        // The button to discard eggs for more cards
         int numberOfResourcesToDiscard = player.getBoard().getWetland().getNumberOfResourcesToDiscard();
         int numberOfResourcesDiscarded = player.getBoard().getWetland().getNumberOfResourcesDiscarded();
         logger.ridiculous(player.getUser().getName() + ": resources to discard = " + numberOfResourcesToDiscard + ", numberOfResourcesDiscarded = " + numberOfResourcesDiscarded);

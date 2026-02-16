@@ -71,6 +71,7 @@ public class StringSelectInteractionProcessor {
             case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_PICK_HABITAT -> takeTurnActionChoicePlayBirdPickHabitat(event, gameContext.game(), gameContext.player());
             case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_REMOVE_EGGS -> takeTurnActionChoicePlayBirdRemoveEggs(event, gameContext.game(), gameContext.player());
             case TAKE_TURN_ACTION_CHOICE_DISCARD_EGGS_BIRD_SELECT_MENU -> discardEggFromBirdToDraw(event, gameContext.game(), gameContext.player());
+            case TAKE_TURN_ACTION_CHOICE_DISCARD_CARDS_BIRD_SELECT_MENU -> discardCardToGainFood(event, gameContext.game(), gameContext.player());
             default -> logger.warn("Unmapped component: " + gameContext.componentId());
         }
     }
@@ -182,7 +183,7 @@ public class StringSelectInteractionProcessor {
     private static void gainFood(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
         int maxFood = currentPlayer.getBoard().getForest().getNumberOfFoodToGain();
 
-        ButtonInteractionProcessor.DiscordMessage picker = ButtonInteractionProcessor.buildFeedPickerMessage(currentGame, maxFood, "");
+        ButtonInteractionProcessor.DiscordMessage picker = ButtonInteractionProcessor.buildFeedPickerMessage(currentGame, currentPlayer, maxFood, "");
         event.editMessage(picker.content())
                 .setComponents(picker.components())
                 .queue();
@@ -371,6 +372,63 @@ public class StringSelectInteractionProcessor {
                                     return component;
                                 }).toList()
                 )).toList();
+    }
+
+    private static void discardCardToGainFood(StringSelectInteractionEvent event, Game game, Player player) {
+        String birdName = event.getValues().get(0);
+        Optional<BirdCard> birdCardOptional = player.getHand().getBirdCards().stream().filter(b -> birdName.equals(b.getName())).findAny();
+
+        if (birdCardOptional.isEmpty()) {
+            event.reply("Could not find a bird matching: " + birdName).setEphemeral(true).queue();
+            return;
+        }
+        BirdCard birdCard = birdCardOptional.get();
+
+        // Mark bird as to be discarded
+        birdCard.setTempDiscarded(true);
+
+        // Increment resources discarded on the wetland
+        player.getBoard().getForest().setNumberOfResourcesDiscarded(
+                player.getBoard().getForest().getNumberOfResourcesDiscarded() + 1);
+
+        // Parse maxFood from message and increment
+        int maxFood = ButtonInteractionProcessor.parseMaxFoodFromMessage(event.getMessage().getContentRaw()) + 1;
+
+        // Get the already spent food
+        String allFood = ButtonInteractionProcessor.parsePreviouslyGainedFood(event.getMessage().getContentRaw());
+
+        // Rebuild gain food UI with increased maxFood
+        ButtonInteractionProcessor.DiscordMessage msg = ButtonInteractionProcessor.buildFeedPickerMessage(game, player, maxFood, allFood);
+
+        // Preserve die selections from the current message's row 0
+        ActionRow oldDieRow = event.getMessage().getActionRows().get(0);
+        int selectedCount = 0;
+        List<Button> preservedDieButtons = new ArrayList<>();
+        for (ItemComponent component : oldDieRow.getComponents()) {
+            if (component instanceof Button button) {
+                if (button.getStyle() == ButtonStyle.SUCCESS) selectedCount++;
+                preservedDieButtons.add(button);
+            }
+        }
+
+        // Replace row 0 with preserved die buttons, disabling unselected if at max
+        if (!preservedDieButtons.isEmpty()) {
+            List<ItemComponent> finalDieButtons = new ArrayList<>();
+            for (Button button : preservedDieButtons) {
+                if (selectedCount >= maxFood && button.getStyle() == ButtonStyle.SECONDARY) {
+                    finalDieButtons.add(button.asDisabled());
+                } else {
+                    finalDieButtons.add(button.asEnabled());
+                }
+            }
+            List<ActionRow> rows = new ArrayList<>(msg.components());
+            rows.set(0, ActionRow.of(finalDieButtons));
+            msg = new ButtonInteractionProcessor.DiscordMessage(msg.content(), rows);
+        }
+
+        event.editMessage(msg.content())
+                .setComponents(msg.components())
+                .queue();
     }
 
     private static void discardEggFromBirdToDraw(StringSelectInteractionEvent event, Game game, Player player) {

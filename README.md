@@ -110,12 +110,13 @@ src/main/resources/
   - [x] Disable +- buttons when spending food
   - [ ] If bird can only go in one habitat, add it automatically
   - [ ] Add food cost to message
-- [x] Implement gaining food
+- [ ] Implement gaining food
+  - [ ] Reroll feeder not working
 - [x] Implement laying eggs
 - [x] Implement drawing cards
 - [ ] Implement resource discard on basic actions
   - [x] Discard eggs to draw cards
-  - [ ] Discard cards to gain food
+  - [x] Discard cards to gain food
   - [ ] Discard food to gain eggs
   - [ ] Discard cards to gain eggs
 - [ ] Implement brown powers
