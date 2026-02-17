@@ -1,16 +1,13 @@
 package game;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import game.components.BirdDeck;
 import game.components.BonusDeck;
 import game.components.Feeder;
-import game.components.enums.*;
-import game.components.meta.Nest;
-import game.components.meta.Power;
+import game.components.enums.Expansion;
 import game.components.subcomponents.BirdCard;
 import game.components.subcomponents.BonusCard;
 import game.exception.GameInputException;
+import game.service.CardRegistry;
 import game.service.enumeration.GameState;
 import game.service.enumeration.GameStateMachine;
 import game.service.enumeration.PlayerState;
@@ -22,12 +19,11 @@ import util.LogLevel;
 import util.Logger;
 import util.StringUtil;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 @Getter
 public class Game {
@@ -98,14 +94,14 @@ public class Game {
         this.feeder = new Feeder(withNectar);
 
         logger.unnecessary("Setup bird deck");
-        getAllBirdCards();
+        birdCards = CardRegistry.getInstance().loadBirdCards();
         birdDeck = new BirdDeck(birdCards.stream()
                 .filter(c -> expansions.contains(c.getExpansion()))
                 .collect(Collectors.toList()));
         birdDeck.shuffleDeck();
 
         logger.unnecessary("Setup bonus deck");
-        getAllBonusCards();
+        bonusCards = CardRegistry.getInstance().loadBonusCards();
         bonusDeck = new BonusDeck(bonusCards.stream()
                 .filter(c -> expansions.contains(c.getExpansion()))
                 .filter(c -> !c.isAutomaExclusive())
@@ -155,84 +151,6 @@ public class Game {
         }
 
         GameStateMachine.transition(this, GameState.GAME_STARTED);
-    }
-
-    /**
-     * Get <b>all</b> the bonus cards from the big bonus json
-     */
-    private void getAllBonusCards() {
-        bonusCards = new ArrayList<>();
-        try (InputStream is = Game.class.getClassLoader().getResourceAsStream(Constants.BONUS_JSON)) {
-            JsonNode root = new ObjectMapper().readTree(is);
-            Iterator<JsonNode> iter = root.elements();
-            while (iter.hasNext()) {
-                JsonNode bonusNode = iter.next();
-                BonusCard bonusCard = new BonusCard();
-                bonusCard.setId(bonusNode.get("id").asInt());
-                bonusCard.setName(bonusNode.get("Name").asText());
-                bonusCard.setCondition(bonusNode.get("Condition").asText());
-                bonusCard.setExpansion(Expansion.fromJsonName(bonusNode.get("Expansion").asText()));
-                bonusCard.setExplanatoryText(bonusNode.get("Explanatory text").asText());
-                bonusCard.setAutomaCompatible(bonusNode.get("Automa").asBoolean());
-                bonusCard.setAutomaExclusive(bonusCard.getName().contains("[automa]"));
-                bonusCards.add(bonusCard);
-            }
-        } catch (IOException e) {
-            logger.error(String.format("Couldn't get all bonus cards : %s", e.getMessage()));
-        }
-    }
-
-    /**
-     * Get <b>all</b> the bird cards from the big bird json
-     */
-    private void getAllBirdCards() {
-        birdCards = new ArrayList<>();
-        try (InputStream is = Game.class.getClassLoader().getResourceAsStream(Constants.BIRD_JSON)) {
-            JsonNode root = new ObjectMapper().readTree(is);
-            Iterator<JsonNode> iter = root.elements();
-            while (iter.hasNext()) {
-                JsonNode birdNode = iter.next();
-                BirdCard birdCard = new BirdCard();
-                birdCard.setName(birdNode.get("Common name").asText());
-                birdCard.setScientificName(birdNode.get("Scientific name").asText());
-                birdCard.setExpansion(Expansion.fromJsonName(birdNode.get("Expansion").asText()));
-                birdCard.setPower(new Power());
-                birdCard.getPower().setPowerText(birdNode.get("Power text").asText());
-                birdCard.setPredator(birdNode.get("Predator").asText().equals("X"));
-                birdCard.setFlocking(birdNode.get("Flocking").asText().equals("X"));
-                birdCard.setBonus(birdNode.get("Bonus card").asText().equals("X"));
-                birdCard.setFeatherPoints(birdNode.get("Victory points").asInt());
-                NestType nestType = NestType.fromJsonName(birdNode.get("Nest type").asText());
-                int capacity = birdNode.get("Egg capacity").asInt();
-                birdCard.setNest(new Nest(capacity, nestType));
-                birdCard.setWingspan(birdNode.get("Wingspan").asInt());
-                birdCard.setHabitats(new ArrayList<>());
-                if (birdNode.get(HabitatEnum.FOREST.getJsonValue()).asText().equals("X")) birdCard.getHabitats().add(HabitatEnum.FOREST);
-                if (birdNode.get(HabitatEnum.GRASSLAND.getJsonValue()).asText().equals("X")) birdCard.getHabitats().add(HabitatEnum.GRASSLAND);
-                if (birdNode.get(HabitatEnum.WETLAND.getJsonValue()).asText().equals("X")) birdCard.getHabitats().add(HabitatEnum.WETLAND);
-                boolean or = birdNode.get("/ (food cost)").asText().equals("X");
-                if (!or) {
-                    List<FoodType> foodCost = new ArrayList<>();
-                    Arrays.stream(FoodType.values()).forEach(foodType -> {
-                        int amount = birdNode.get(foodType.getJsonName()).asInt();
-                        IntStream.range(0, amount).forEach(i -> foodCost.add(foodType));
-                    });
-                    birdCard.setFoodCost(List.of(foodCost));
-                } else {
-                    List<List<FoodType>> foodCost = Arrays.stream(FoodType.values())
-                            .filter(foodType -> birdNode.get(foodType.getJsonName()).asInt() > 0)
-                            .map(List::of)
-                            .toList();
-                    birdCard.setFoodCost(foodCost);
-                }
-                birdCard.setLanguageBonusCards(Stream.of("Anatomist", "Cartographer", "Historian", "Photographer")
-                        .filter(s -> birdNode.get(s).asText().equals("X"))
-                        .collect(Collectors.toList()));
-                birdCards.add(birdCard);
-            }
-        } catch (IOException e) {
-            logger.error(String.format("Couldn't get all bird cards : %s", e.getMessage()));
-        }
     }
 
     /**

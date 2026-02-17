@@ -1,5 +1,7 @@
 package game.ui.discord.processors;
 
+import game.ui.discord.commands.BirdInfo;
+import game.ui.discord.commands.BonusInfo;
 import game.ui.discord.commands.CreateGame;
 import game.ui.discord.commands.GetActiveGames;
 import game.ui.discord.commands.SlashCommand;
@@ -29,7 +31,9 @@ public class SlashCommandProcessor {
                 new CreateGame(),
 //                new PickStartingHand(),
 //                new TakeTurn(),
-                new GetActiveGames()
+                new GetActiveGames(),
+                new BirdInfo(),
+                new BonusInfo()
 //                new SeeBoard(),
 //                new SeeBirdFeeder(),
 //                new SeeTray()

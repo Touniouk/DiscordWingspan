@@ -13,4 +13,5 @@ public class BonusCard extends Card {
     private boolean automaExclusive;
     private String condition;
     private String explanatoryText;
+    private String vp;
 }
