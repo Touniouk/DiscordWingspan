@@ -117,6 +117,7 @@ public class ButtonInteractionProcessor {
                      TAKE_TURN_ACTION_CHOICE_LAY_EGGS_REMOVE_BIRD_4 -> layEggsRemoveBird(event, gameContext.game(), gameContext.player());
                 case TAKE_TURN_ACTION_CHOICE_LAY_EGGS_BACK_BUTTON -> layEggsBackToHabitat(event, gameContext.game(), gameContext.player());
                 case TAKE_TURN_ACTION_CHOICE_LAY_EGGS_SUBMIT_BUTTON -> submitLayEggs(event, gameContext.game(), gameContext.player());
+                case TAKE_TURN_ACTION_DISCARD_FOOD -> discardFoodToLayEggs(event, gameContext.game(), gameContext.player());
 
                 // Draw cards buttons
                 case TAKE_TURN_ACTION_CHOICE_DRAW_CARDS_DRAW_TRAY_0,
@@ -671,16 +672,24 @@ public class ButtonInteractionProcessor {
             habitatButtons.add(btn);
         }
 
+        // The button to discard food for more eggs
+        int numberOfResourcesToDiscard = player.getBoard().getGrassland().getNumberOfResourcesToDiscard();
+        int numberOfResourcesDiscarded = player.getBoard().getGrassland().getNumberOfResourcesDiscarded();
+        logger.ridiculous(player.getUser().getName() + ": resources to discard = " + numberOfResourcesToDiscard + ", numberOfResourcesDiscarded = " + numberOfResourcesDiscarded);
+        Button discardFoodButton = Button.secondary(DiscordObject.TAKE_TURN_ACTION_DISCARD_FOOD + ":" + gameId, Constants.DISCARD_RESOURCES)
+                .withDisabled(numberOfResourcesDiscarded >= numberOfResourcesToDiscard);
+
         Button submitButton = Button.success(DiscordObject.TAKE_TURN_ACTION_CHOICE_LAY_EGGS_SUBMIT_BUTTON.name() + ":" + gameId, Constants.SUBMIT_SELECTION);
 
         List<ActionRow> rows = new ArrayList<>();
         rows.add(ActionRow.of(habitatButtons));
+        rows.add(ActionRow.of(discardFoodButton));
         rows.add(ActionRow.of(submitButton));
 
         return new DiscordMessage(content.toString(), rows);
     }
 
-    private static int parseMaxEggsFromMessage(String content) {
+    static int parseMaxEggsFromMessage(String content) {
         Matcher matcher = Pattern.compile("Lay up to \\*\\*(\\d+)\\*\\* eggs").matcher(content);
         return matcher.find() ? Integer.parseInt(matcher.group(1)) : 2;
     }
@@ -826,9 +835,6 @@ public class ButtonInteractionProcessor {
     }
 
     private static void discardFoodToLayEggs(ButtonInteractionEvent event, Game game, Player player) {
-
-        // TODO: discard food to klay more eggs
-
         // Build select options for all food in hand
         List<SelectOption> options = player.getHand().getPantry().entrySet().stream()
                 .filter(entry -> entry.getValue() != 0)
@@ -841,7 +847,7 @@ public class ButtonInteractionProcessor {
             return;
         }
 
-        StringSelectMenu selectMenu = StringSelectMenu.create(DiscordObject.TAKE_TURN_ACTION_CHOICE_DISCARD_CARDS_BIRD_SELECT_MENU.name() + ":" + game.getGameId())
+        StringSelectMenu selectMenu = StringSelectMenu.create(DiscordObject.TAKE_TURN_ACTION_CHOICE_DISCARD_FOOD_SELECT_MENU.name() + ":" + game.getGameId())
                 .setPlaceholder("Pick a food to discard")
                 .setMinValues(1)
                 .setMaxValues(1)
@@ -851,7 +857,7 @@ public class ButtonInteractionProcessor {
         // Replace the discard button row with the select menu, keep other rows
         List<ActionRow> oldRows = event.getMessage().getActionRows();
         List<ActionRow> newRows = List.of(
-                oldRows.get(0),              // dice buttons
+                oldRows.get(0),              // habitat buttons
                 ActionRow.of(selectMenu),    // replace discard button
                 oldRows.get(2)               // submit row
         );

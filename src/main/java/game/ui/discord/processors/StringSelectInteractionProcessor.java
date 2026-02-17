@@ -72,6 +72,7 @@ public class StringSelectInteractionProcessor {
             case TAKE_TURN_ACTION_CHOICE_PLAY_BIRD_REMOVE_EGGS -> takeTurnActionChoicePlayBirdRemoveEggs(event, gameContext.game(), gameContext.player());
             case TAKE_TURN_ACTION_CHOICE_DISCARD_EGGS_BIRD_SELECT_MENU -> discardEggFromBirdToDraw(event, gameContext.game(), gameContext.player());
             case TAKE_TURN_ACTION_CHOICE_DISCARD_CARDS_BIRD_SELECT_MENU -> discardCardToGainFood(event, gameContext.game(), gameContext.player());
+            case TAKE_TURN_ACTION_CHOICE_DISCARD_FOOD_SELECT_MENU -> discardFoodToLayEggs(event, gameContext.game(), gameContext.player());
             default -> logger.warn("Unmapped component: " + gameContext.componentId());
         }
     }
@@ -426,6 +427,27 @@ public class StringSelectInteractionProcessor {
             msg = new ButtonInteractionProcessor.DiscordMessage(msg.content(), rows);
         }
 
+        event.editMessage(msg.content())
+                .setComponents(msg.components())
+                .queue();
+    }
+
+    private static void discardFoodToLayEggs(StringSelectInteractionEvent event, Game game, Player player) {
+        String foodName = event.getValues().get(0);
+        FoodType foodType = FoodType.valueOf(foodName);
+
+        // Remove food from the player's pantry
+        player.getHand().getPantry().computeIfPresent(foodType, (k, v) -> v - 1);
+
+        // Increment resources discarded on the grassland
+        player.getBoard().getGrassland().setNumberOfResourcesDiscarded(
+                player.getBoard().getGrassland().getNumberOfResourcesDiscarded() + 1);
+
+        // Parse maxEggs from message and increment
+        int maxEggs = ButtonInteractionProcessor.parseMaxEggsFromMessage(event.getMessage().getContentRaw()) + 1;
+
+        // Rebuild lay eggs UI with increased maxEggs
+        ButtonInteractionProcessor.DiscordMessage msg = ButtonInteractionProcessor.buildLayEggsHabitatMessage(game, player, maxEggs);
         event.editMessage(msg.content())
                 .setComponents(msg.components())
                 .queue();
