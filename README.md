@@ -117,7 +117,7 @@ src/main/resources/
 - [ ] Implement resource discard on basic actions
   - [x] Discard eggs to draw cards
   - [x] Discard cards to gain food
-  - [ ] Discard food to gain eggs
+  - [x] Discard food to gain eggs
   - [ ] Discard cards to gain eggs
 - [ ] Implement brown powers
 - [ ] Implement white powers

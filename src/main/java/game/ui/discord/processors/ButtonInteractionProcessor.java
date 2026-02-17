@@ -195,6 +195,7 @@ public class ButtonInteractionProcessor {
         }
         gameContext.player().getHand().getTempPantrySpentFood().put(FoodType.values()[i], numberOfFoodToSpend - 1);
         gameContext.player().getHand().getTempPantryAvailableFood().put(FoodType.values()[i], numberOfFoodWeHave + 1);
+        logger.debug(gameContext.player().getUser().getName() + " removed food: " + FoodType.values()[i].getDisplayName() + ", spent: " + gameContext.player().getHand().getTempPantrySpentFood() + ", available: " + gameContext.player().getHand().getTempPantryAvailableFood());
 
         showFoodUsedMessage(event, gameContext);
     }
@@ -212,6 +213,7 @@ public class ButtonInteractionProcessor {
         }
         gameContext.player().getHand().getTempPantrySpentFood().put(FoodType.values()[i], numberOfFoodToSpend + 1);
         gameContext.player().getHand().getTempPantryAvailableFood().put(FoodType.values()[i], numberOfFoodWeHave - 1);
+        logger.debug(gameContext.player().getUser().getName() + " added food: " + FoodType.values()[i].getDisplayName() + ", spent: " + gameContext.player().getHand().getTempPantrySpentFood() + ", available: " + gameContext.player().getHand().getTempPantryAvailableFood());
 
         showFoodUsedMessage(event, gameContext);
     }
@@ -393,6 +395,8 @@ public class ButtonInteractionProcessor {
             }
         }
 
+        logger.debug("Die toggled: " + clickedId.split(":")[0] + ", selected=" + selectedCount + "/" + maxFood);
+
         // If at max: disable unselected buttons; otherwise enable all
         List<ItemComponent> finalDieButtons = new ArrayList<>();
         for (ItemComponent component : newDieButtons) {
@@ -521,6 +525,7 @@ public class ButtonInteractionProcessor {
      */
     private static void submitGainFood(ButtonInteractionEvent event, Game currentGame, Player currentPlayer) {
         Map<Integer, FoodType> foodChoices = resolveFoodChoices(event, currentGame);
+        logger.debug(currentPlayer.getUser().getName() + " submitted Gain Food, choices=" + foodChoices);
         String allFood = accumulateFoodGained(event, currentPlayer, foodChoices);
 
         event.editMessage(Constants.PICK_ACTION + "Gain Food\n\n" +
@@ -795,6 +800,7 @@ public class ButtonInteractionProcessor {
         }
 
         player.getHand().addTempEgg(bird);
+        logger.debug(player.getUser().getName() + " added egg to " + bird.getName() + " (" + (current + 1) + "/" + bird.getNest().getCapacity() + "), remaining=" + (eggsRemaining - 1) + "/" + maxEggs);
 
         DiscordMessage msg = buildLayEggsBirdMessage(game, player, habitatEnum, maxEggs);
         event.editMessage(msg.content())
@@ -818,6 +824,7 @@ public class ButtonInteractionProcessor {
         }
 
         player.getHand().removeTempEgg(bird);
+        logger.debug(player.getUser().getName() + " removed egg from " + bird.getName() + ", tempEggs=" + player.getHand().getTempEggsForBird(bird));
 
         int maxEggs = parseMaxEggsFromMessage(event.getMessage().getContentRaw());
         DiscordMessage msg = buildLayEggsBirdMessage(game, player, habitatEnum, maxEggs);
@@ -869,6 +876,7 @@ public class ButtonInteractionProcessor {
 
     private static void submitLayEggs(ButtonInteractionEvent event, Game game, Player player) {
         int totalEggs = player.getHand().getTotalTempEggs();
+        logger.debug(player.getUser().getName() + " submitted Lay Eggs, totalEggs=" + totalEggs + ", assignments=" + player.getHand().getTempEggsToLay());
         player.getHand().confirmLayEggs();
 
         event.editMessage(Constants.PICK_ACTION + BoardAction.LAY_EGGS.getLabel() + "\n\n" +

@@ -14,8 +14,8 @@ public class Grassland extends Habitat {
         if (isNectarBoard()) {
             return switch (getBirds().size()) {
                 case 0 -> 1;
-                case 1 -> 2;
-                case 2, 3, 4 -> 3;
+                case 1, 2, 3 -> 2;
+                case 4 -> 3;
                 case 5 -> 4;
                 default -> throw new IllegalStateException("Unexpected value: " + getBirds().size());
             };

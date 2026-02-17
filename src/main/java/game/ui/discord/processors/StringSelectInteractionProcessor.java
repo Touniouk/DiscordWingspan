@@ -125,6 +125,7 @@ public class StringSelectInteractionProcessor {
     private static void takeTurnActionChoicePlayBirdPickHabitat(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
         HabitatEnum habitatEnum = HabitatEnum.valueOf(event.getValues().get(0));
         Habitat habitat = currentPlayer.getBoard().getHabitat(habitatEnum);
+        logger.debug(currentPlayer.getUser().getName() + " picked habitat: " + habitatEnum.getJsonValue() + " (" + habitat.getBirds().size() + "/" + Habitat.numberOfSpaceInHabitat + " birds, egg cost: " + habitat.getNumberOfEggsToSpend() + ")");
 
         // Check if this habitat is full
         if (habitat.isHabitatFull()) {
@@ -183,6 +184,7 @@ public class StringSelectInteractionProcessor {
 
     private static void gainFood(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
         int maxFood = currentPlayer.getBoard().getForest().getNumberOfFoodToGain();
+        logger.debug(currentPlayer.getUser().getName() + " chose Gain Food, maxFood=" + maxFood + ", feeder dice=" + currentGame.getFeeder().getDiceInFeeder().size());
 
         ButtonInteractionProcessor.DiscordMessage picker = ButtonInteractionProcessor.buildFeedPickerMessage(currentGame, currentPlayer, maxFood, "");
         event.editMessage(picker.content())
@@ -199,6 +201,7 @@ public class StringSelectInteractionProcessor {
 
         currentPlayer.getHand().resetTempEggs();
         int maxEggs = currentPlayer.getBoard().getGrassland().getNumberOfEggsToLay();
+        logger.debug(currentPlayer.getUser().getName() + " chose Lay Eggs, maxEggs=" + maxEggs + ", birds on board=" + allBirds.size());
 
         ButtonInteractionProcessor.DiscordMessage msg = ButtonInteractionProcessor.buildLayEggsHabitatMessage(currentGame, currentPlayer, maxEggs);
         event.editMessage(msg.content())
@@ -242,6 +245,8 @@ public class StringSelectInteractionProcessor {
             event.reply(ex.getMessage()).setEphemeral(true).queue();
             return;
         }
+
+        logger.debug(currentPlayer.getUser().getName() + " selected bird to play: " + birdToPlay);
 
         List<ActionRow> components = getChooseFoodSelector(currentGame, currentPlayer);
 

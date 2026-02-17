@@ -145,6 +145,12 @@ OUTPUT_KEY_ORDER = [
 ]
 
 
+FLAG_SYMBOL_MAP = {
+    "/ (food cost)": "/",
+    "* (food cost)": "*",
+}
+
+
 def convert_value(json_key, raw_value):
     """Convert a raw xlsx cell value to the appropriate JSON value."""
     if json_key in NUMERIC_COLS:
@@ -156,7 +162,7 @@ def convert_value(json_key, raw_value):
         return float(raw_value)
 
     if json_key in FLAG_COLS:
-        if raw_value == "X":
+        if raw_value == "X" or (json_key in FLAG_SYMBOL_MAP and raw_value == FLAG_SYMBOL_MAP[json_key]):
             return "X"
         return None
 
