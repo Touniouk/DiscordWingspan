@@ -31,7 +31,8 @@ public class SlashCommandProcessor {
                 new BirdInfo(),
                 new BonusInfo(),
                 new SeeBoard(),
-                new SeeGoals()
+                new SeeGoals(),
+                new ClearChannel()
 //                new SeeBirdFeeder(),
 //                new SeeTray()
         ).collect(Collectors.toMap(SlashCommand::getName, c -> c));

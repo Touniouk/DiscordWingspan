@@ -14,11 +14,7 @@ import game.ui.discord.enumeration.DiscordObject;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.dv8tion.jda.api.entities.channel.unions.GuildChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.interactions.commands.OptionMapping;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
@@ -27,7 +23,10 @@ import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import util.StringUtil;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -36,8 +35,6 @@ public class CreateGame implements SlashCommand {
     private static final String name = "create_game";
     private static final String description = "Start a game of Wingspan";
 
-    private static final String PARAM_CHANNEL = "bot_channel";
-
     @Override
     public String getName() {
         return name;
@@ -45,19 +42,13 @@ public class CreateGame implements SlashCommand {
 
     @Override
     public CommandData getCommandData() {
-        return Commands.slash(name, description)
-                .addOption(OptionType.CHANNEL, PARAM_CHANNEL, "Which channel to play the game in", false);
+        return Commands.slash(name, description);
     }
 
     @Override
     public void handle(SlashCommandInteractionEvent event) {
-        TextChannel gameChannel = Optional
-                .ofNullable(event.getOption(PARAM_CHANNEL))
-                .map(OptionMapping::getAsChannel)
-                .map(GuildChannelUnion::asTextChannel)
-                .orElse(event.getChannel().asTextChannel());
-
-        GameLobby lobby = GameService.getInstance().createLobby(event.getUser(), gameChannel);
+        // TODO: get the default game channel
+        GameLobby lobby = GameService.getInstance().createLobby(event.getUser(), null);
 
         MessageEmbed embed = buildLobbyEmbed(lobby);
         List<ActionRow> components = buildLobbyComponents(lobby);
