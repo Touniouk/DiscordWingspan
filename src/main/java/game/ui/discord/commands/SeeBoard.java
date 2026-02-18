@@ -68,6 +68,7 @@ public class SeeBoard implements SlashCommand {
     public static void seeBoard(IReplyCallback event, Player currentPlayer, boolean showHiddenInfo) {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle(StringUtil.replacePlaceholders("**" + currentPlayer.getUser().getName() + "️'s Board: **"));
+        embed.setDescription(currentPlayer.getBoard().isNectarBoard() ? "Oceania board" : "Base board");
         embed.setColor(0x1abc9c);
 
         String boardString = "**Played Birds: **\n" +

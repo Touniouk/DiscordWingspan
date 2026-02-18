@@ -1,10 +1,6 @@
 package game.ui.discord.processors;
 
-import game.ui.discord.commands.BirdInfo;
-import game.ui.discord.commands.BonusInfo;
-import game.ui.discord.commands.CreateGame;
-import game.ui.discord.commands.GetActiveGames;
-import game.ui.discord.commands.SlashCommand;
+import game.ui.discord.commands.*;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -33,8 +29,8 @@ public class SlashCommandProcessor {
 //                new TakeTurn(),
                 new GetActiveGames(),
                 new BirdInfo(),
-                new BonusInfo()
-//                new SeeBoard(),
+                new BonusInfo(),
+                new SeeBoard()
 //                new SeeBirdFeeder(),
 //                new SeeTray()
         ).collect(Collectors.toMap(SlashCommand::getName, c -> c));

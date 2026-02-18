@@ -111,8 +111,8 @@ src/main/resources/
   - [ ] If bird can only go in one habitat, add it automatically
   - [x] Add food cost to message
   - [x] "which bird to remove egg" should have egg count
-- [ ] Implement gaining food
-  - [ ] Reroll feeder not working
+- [x] Implement gaining food
+  - [x] Reroll feeder not working
 - [x] Implement laying eggs
 - [x] Implement drawing cards
 - [ ] Implement resource discard on basic actions

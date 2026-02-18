@@ -6,6 +6,7 @@ import game.components.meta.habitat.Forest;
 import game.components.meta.habitat.Grassland;
 import game.components.meta.habitat.Wetland;
 import game.components.subcomponents.BirdCard;
+import lombok.Getter;
 
 import java.util.Collection;
 import java.util.List;
@@ -15,33 +16,25 @@ import java.util.stream.Stream;
 /**
  * Represents a player's board with three habitats: forest, grassland, and wetland.
  */
+@Getter
 public class Board {
     private final Forest forest;
     private final Grassland grassland;
     private final Wetland wetland;
+    private final boolean nectarBoard;
 
     public Board() {
         this.forest = new Forest(false);
         this.grassland = new Grassland(false);
         this.wetland = new Wetland(false);
+        this.nectarBoard = false;
     }
 
     public Board(boolean nectarBoard) {
         this.forest = new Forest(nectarBoard);
         this.grassland = new Grassland(nectarBoard);
         this.wetland = new Wetland(nectarBoard);
-    }
-
-    public Forest getForest() {
-        return forest;
-    }
-
-    public Grassland getGrassland() {
-        return grassland;
-    }
-
-    public Wetland getWetland() {
-        return wetland;
+        this.nectarBoard = nectarBoard;
     }
 
     /**
