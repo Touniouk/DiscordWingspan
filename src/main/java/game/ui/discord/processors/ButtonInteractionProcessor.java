@@ -71,6 +71,7 @@ public class ButtonInteractionProcessor {
                 case PROMPT_SEE_BOARD_BUTTON -> SeeBoard.seeBoard(event, gameContext.player());
                 case PROMPT_SEE_FEEDER_BUTTON -> SeeBirdFeeder.seeBirdFeeder(event, gameContext);
                 case PROMPT_SEE_TRAY_BUTTON -> SeeTray.seeTray(event, gameContext.game());
+                case PROMPT_SEE_GOALS_BUTTON -> SeeGoals.seeGoals(event, gameContext.game());
 
                 // Pick Starting hand buttons
                 case PICK_STARTING_HAND_SUBMIT_BUTTON -> pickStartingHandSubmitButton(event, gameContext.game(), userId);
@@ -1216,6 +1217,7 @@ public class ButtonInteractionProcessor {
         Button pickHandButton = Button.success(DiscordObject.PROMPT_PICK_HAND_BUTTON.name() + ":" + gameId, "\uD83D\uDC50 Pick Starting Hand");
         Button seeFeederButton = Button.secondary(DiscordObject.PROMPT_SEE_FEEDER_BUTTON.name() + ":" + gameId, "\uD83C\uDFB2 See Feeder");
         Button seeTrayButton = Button.secondary(DiscordObject.PROMPT_SEE_TRAY_BUTTON.name() + ":" + gameId, "\uD83D\uDC26 See Tray");
+        Button seeGoalsButton = Button.secondary(DiscordObject.PROMPT_SEE_GOALS_BUTTON.name() + ":" + gameId, "\uD83C\uDFC6 See Goals");
 
         String playersAsMention = game.getPlayers().stream()
                 .map(p -> p.getUser().getAsMention())
@@ -1223,7 +1225,7 @@ public class ButtonInteractionProcessor {
 
         event.editMessage("Game `" + gameId + "` created with " + playersAsMention + "\n")
                 .setEmbeds()
-                .setComponents(ActionRow.of(pickHandButton, seeFeederButton, seeTrayButton))
+                .setComponents(ActionRow.of(pickHandButton, seeFeederButton, seeTrayButton, seeGoalsButton))
                 .queue();
     }
 

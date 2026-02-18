@@ -89,7 +89,7 @@ public class CardRegistry {
      */
     public List<BirdCard> loadBirdCards() {
         List<BirdCard> birdCards = new ArrayList<>();
-        try (InputStream is = Game.class.getClassLoader().getResourceAsStream(Constants.BIRD_JSON)) {
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(Constants.BIRD_JSON)) {
             JsonNode root = new ObjectMapper().readTree(is);
             Iterator<JsonNode> iter = root.elements();
             while (iter.hasNext()) {

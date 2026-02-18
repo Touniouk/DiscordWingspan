@@ -30,7 +30,8 @@ public class SlashCommandProcessor {
                 new GetActiveGames(),
                 new BirdInfo(),
                 new BonusInfo(),
-                new SeeBoard()
+                new SeeBoard(),
+                new SeeGoals()
 //                new SeeBirdFeeder(),
 //                new SeeTray()
         ).collect(Collectors.toMap(SlashCommand::getName, c -> c));

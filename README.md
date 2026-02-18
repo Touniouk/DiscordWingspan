@@ -127,6 +127,7 @@ src/main/resources/
 - [ ] Implement bonus card scoring
 - [ ] Playing with nectar
 - [ ] Nectar scoring
+- [ ] Implement the custom static game parameters such as noGoalFirst
 
 ## License
 

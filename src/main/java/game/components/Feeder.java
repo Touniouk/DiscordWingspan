@@ -14,13 +14,14 @@ import java.util.stream.IntStream;
 @Getter
 public class Feeder {
 
-    private final Random random = new Random(Game.GAME_SEED);
+    private final Random random;
     private final List<Die> diceOutOfFeeder;
     private final List<Die> diceInFeeder;
 
-    public Feeder(boolean withNectar) {
+    public Feeder(boolean withNectar, Random random) {
         this.diceInFeeder = IntStream.range(0, 5).mapToObj(i -> new Die(withNectar, random)).collect(Collectors.toList());
         this.diceOutOfFeeder = new ArrayList<>();
+        this.random = random;
         reRollFeeder();
     }
 

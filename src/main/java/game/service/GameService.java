@@ -109,9 +109,10 @@ public class GameService {
         Button seeBoardButton = Button.secondary(DiscordObject.PROMPT_SEE_BOARD_BUTTON.name() + ":" + gameId, "\uD83D\uDCCB See Board");
         Button seeFeederButton = Button.secondary(DiscordObject.PROMPT_SEE_FEEDER_BUTTON.name() + ":" + gameId, "\uD83C\uDFB2 See Feeder");
         Button seeTrayButton = Button.secondary(DiscordObject.PROMPT_SEE_TRAY_BUTTON.name() + ":" + gameId, "\uD83D\uDC26 See Tray");
+        Button seeGoalsButton = Button.secondary(DiscordObject.PROMPT_SEE_GOALS_BUTTON.name() + ":" + gameId, "\uD83C\uDFC6 See Goals");
         game.getGameChannel().sendMessage(
                 player.getUser().getAsMention() + " please take your turn (turn " + game.getTurnCounter() + ")")
-                .addActionRow(takeTurnButton, seeBoardButton, seeFeederButton, seeTrayButton)
+                .addActionRow(takeTurnButton, seeBoardButton, seeFeederButton, seeTrayButton, seeGoalsButton)
                 .queue();
     }
 

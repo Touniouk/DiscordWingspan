@@ -12,13 +12,14 @@ import java.util.*;
  * @param <T> the card type
  */
 public abstract class CardDeck<T extends Card> {
-    private final Random random = new Random(Game.GAME_SEED);
+    private final Random random;
     private Deque<T> drawDeck;
     private final Deque<T> discardDeck;
 
-    public CardDeck(List<T> cardDeck) {
+    public CardDeck(List<T> cardDeck, Random random) {
         drawDeck = new ArrayDeque<>(cardDeck);
         discardDeck = new ArrayDeque<>();
+        this.random = random;
     }
 
     /**

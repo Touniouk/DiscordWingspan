@@ -29,6 +29,7 @@ public enum EmojiEnum {
     EGG("egg", "<:egg:1471704279868768316>"),
     BIRD("bird", "<:bird:1471704270079266876>"),
     BONUS("bonus-card", "<:bonuscard:1471704271417512093>"),
+    CUBE("cube", "<:cube:1473493065544106127>"),
 
     // Nest types
     CAVITY("cavity", "<:cavity:1471704276098093199>"),

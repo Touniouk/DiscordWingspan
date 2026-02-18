@@ -1,11 +1,15 @@
 package game;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import game.components.BirdDeck;
 import game.components.BonusDeck;
 import game.components.Feeder;
+import game.components.enums.Constants;
 import game.components.enums.Expansion;
 import game.components.subcomponents.BirdCard;
 import game.components.subcomponents.BonusCard;
+import game.components.subcomponents.Goal;
 import game.exception.GameInputException;
 import game.service.CardRegistry;
 import game.service.enumeration.GameState;
@@ -19,22 +23,25 @@ import util.LogLevel;
 import util.Logger;
 import util.StringUtil;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 @Getter
 public class Game {
 
     // Seed
-    public static long GAME_SEED;
+    private final long GAME_SEED;
+    private final Random random;
 
     // Components
     public List<BirdCard> birdCards;
     public List<BonusCard> bonusCards;
     private final List<Player> players;
+    private final List<Goal> goals;
     private final BirdDeck birdDeck;
     private final BonusDeck bonusDeck;
     private final Feeder feeder;
@@ -51,6 +58,8 @@ public class Game {
     private final List<Expansion> expansions;
     private final int startingBirdHandSize;
     private final int startingBonusHandSize;
+    private final int numberOfRounds;
+    private final boolean noGoalFirst;
 
     // Logger
     private final Logger logger = new Logger(Game.class, LogLevel.ALL);
@@ -73,6 +82,7 @@ public class Game {
         }
 
         GAME_SEED = seed == 0 ? new Random().nextLong() : seed;
+        this.random = new Random(GAME_SEED);
         logger.info("Setting up Game with seed : " + GAME_SEED);
 
         this.gameId = "game_id-" + gameId;
@@ -80,6 +90,8 @@ public class Game {
         this.gameChannel = gameChannel;
         this.startingBirdHandSize = startingBirdHandSize;
         this.startingBonusHandSize = startingBonusHandSize;
+        this.numberOfRounds = 4;
+        this.noGoalFirst = false;
 
         logger.debug(String.format("Parameters:\nSeed : %s\nstartingBirdHandSize : %s\nstartingBonusHandSize : %s\nwithNectar : %s\nexpansions : %s\nplayers : %s",
                 GAME_SEED, startingBirdHandSize, startingBonusHandSize, withNectar, expansions, StringUtil.getListAsString(Arrays.stream(playerUsers).map(User::getName).toList(), ", ")));
@@ -91,13 +103,13 @@ public class Game {
         this.expansions = expansions;
 
         logger.unnecessary("Setup feeder");
-        this.feeder = new Feeder(withNectar);
+        this.feeder = new Feeder(withNectar, random);
 
         logger.unnecessary("Setup bird deck");
         birdCards = CardRegistry.getInstance().loadBirdCards();
         birdDeck = new BirdDeck(birdCards.stream()
                 .filter(c -> expansions.contains(c.getExpansion()))
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList()), random);
         birdDeck.shuffleDeck();
 
         logger.unnecessary("Setup bonus deck");
@@ -105,10 +117,47 @@ public class Game {
         bonusDeck = new BonusDeck(bonusCards.stream()
                 .filter(c -> expansions.contains(c.getExpansion()))
                 .filter(c -> !c.isAutomaExclusive())
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList()), random);
         bonusDeck.shuffleDeck();
 
-        // TODO: Setup EOR
+        logger.unnecessary("Setup EOR");
+        List<Goal> allGoals = new ArrayList<>();
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(Constants.GOAL_JSON)) {
+            JsonNode root = new ObjectMapper().readTree(is);
+            Iterator<JsonNode> iter = root.elements();
+            while (iter.hasNext()) {
+                JsonNode goalNode = iter.next();
+                allGoals.add(Goal.builder()
+                        .name(goalNode.get("Name").asText())
+                        .condition(goalNode.get("Condition").asText())
+                        .explanatoryText(goalNode.get("Explanatory Text").asText())
+                        .expansion(Expansion.fromJsonName(goalNode.get("Expansion").asText()))
+                        .duet("X".equals(goalNode.get("Duet").asText()))
+                        .build());
+            }
+        } catch (IOException e) {
+            logger.error(String.format("Couldn't get all goals : %s", e.getMessage()));
+        }
+        Collections.shuffle(allGoals, random);
+        if (noGoalFirst) {
+            goals = Stream.concat(
+                    allGoals.stream()
+                            .filter(g -> g.getName().equals("No Goal"))
+                            .findAny()
+                            .stream(),
+                    allGoals.stream()
+                            .filter(g -> expansions.contains(g.getExpansion()))
+                            .filter(g -> !g.isDuet())
+                            .filter(g -> !g.getName().equals("No Goal"))
+                            .limit(numberOfRounds)
+            ).toList();
+        } else {
+            goals = allGoals.stream()
+                    .filter(g -> expansions.contains(g.getExpansion()))
+                    .filter(g -> !g.isDuet())
+                    .limit(numberOfRounds)
+                    .toList();
+        }
 
         logger.unnecessary("Game setup completed");
     }

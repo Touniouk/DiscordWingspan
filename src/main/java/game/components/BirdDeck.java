@@ -6,6 +6,7 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Bird card deck with a face-up tray of 3 birds that players can pick from.
@@ -15,8 +16,8 @@ public class BirdDeck extends CardDeck<BirdCard> {
     @Getter
     private final BirdCard[] tray;
 
-    public BirdDeck(List<BirdCard> cardDeck) {
-        super(cardDeck);
+    public BirdDeck(List<BirdCard> cardDeck, Random random) {
+        super(cardDeck, random);
         tray = new BirdCard[3];
         refillTray();
     }
