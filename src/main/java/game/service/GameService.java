@@ -3,10 +3,12 @@ package game.service;
 import game.Game;
 import game.GameLobby;
 import game.Player;
+import game.components.enums.Constants;
 import game.components.enums.Expansion;
 import game.components.enums.FoodType;
 import game.components.enums.HabitatEnum;
 import game.components.meta.GameAction;
+import game.components.meta.Round;
 import game.components.subcomponents.BirdCard;
 import game.exception.GameInputException;
 import game.service.enumeration.PlayerState;
@@ -223,12 +225,54 @@ public class GameService {
 
     /**
      * Ends the current player's turn, advances to the next player, and starts their turn.
+     * If it's the end of the round or the end of the game, process that as well
      */
     public void endTurn(Game currentGame, Player currentPlayer) {
         logger.info("Ending turn for player " + currentPlayer.getUser().getName());
         PlayerStateMachine.transition(currentPlayer, PlayerState.WAITING_FOR_TURN);
         currentGame.advanceTurn();
         Player nextPlayer = currentGame.getPlayers().get(currentGame.getCurrentPlayerIndex());
+
+        // Check if it's the end of the round
+        if (currentGame.getTurnCounter() >= currentGame.getCurrentRound().getNumberOfTurns()) {
+            // If it is, move to next round
+            endRound(currentGame, nextPlayer);
+        } else {
+            // If it's not, simply advance to the next player
+            startTurnForPlayer(currentGame, nextPlayer);
+        }
+    }
+
+    /**
+     * End round, calculates round end points and starts the next round
+     * If it's the end of the game, process that as well
+     */
+    public void endRound(Game currentGame, Player nextPlayer) {
+        logger.info("Starting round " + currentGame.getRoundCounter());
+        currentGame.advanceRound();
+        Round nextRound = currentGame.getCurrentRound();
+
+        // TODO: Activate round end powers
+
+        // TODO: Calculate round end points
+
+        // Remove cube
+        if (!Constants.NO_GOAL.equals(nextRound.getRoundEndGoal().getName())) {
+            nextRound.setNumberOfTurns(nextRound.getNumberOfTurns() - 1);
+        }
+
+        // TODO: Show round results
+//        Button takeTurnButton = Button.success(DiscordObject.PROMPT_TAKE_TURN_BUTTON.name() + ":" + gameId, "\uD83C\uDFAF Take Turn");
+//        Button seeBoardButton = Button.secondary(DiscordObject.PROMPT_SEE_BOARD_BUTTON.name() + ":" + gameId, "\uD83D\uDCCB See Board");
+//        Button seeFeederButton = Button.secondary(DiscordObject.PROMPT_SEE_FEEDER_BUTTON.name() + ":" + gameId, "\uD83C\uDFB2 See Feeder");
+//        Button seeTrayButton = Button.secondary(DiscordObject.PROMPT_SEE_TRAY_BUTTON.name() + ":" + gameId, "\uD83D\uDC26 See Tray");
+//        Button seeGoalsButton = Button.secondary(DiscordObject.PROMPT_SEE_GOALS_BUTTON.name() + ":" + gameId, "\uD83C\uDFC6 See Goals");
+//        game.getGameChannel().sendMessage(
+//                        player.getUser().getAsMention() + " please take your turn (turn " + game.getTurnCounter() + ")")
+//                .addActionRow(takeTurnButton, seeBoardButton, seeFeederButton, seeTrayButton, seeGoalsButton)
+//                .queue();
+
+        // Start turn
         startTurnForPlayer(currentGame, nextPlayer);
     }
 

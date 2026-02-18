@@ -7,6 +7,7 @@ import game.components.BonusDeck;
 import game.components.Feeder;
 import game.components.enums.Constants;
 import game.components.enums.Expansion;
+import game.components.meta.Round;
 import game.components.subcomponents.BirdCard;
 import game.components.subcomponents.BonusCard;
 import game.components.subcomponents.Goal;
@@ -41,7 +42,7 @@ public class Game {
     public List<BirdCard> birdCards;
     public List<BonusCard> bonusCards;
     private final List<Player> players;
-    private final List<Goal> goals;
+    private final List<Round> rounds;
     private final BirdDeck birdDeck;
     private final BonusDeck bonusDeck;
     private final Feeder feeder;
@@ -51,6 +52,7 @@ public class Game {
     private GameState state;
     private int currentPlayerIndex;
     private int turnCounter = 1;
+    private int roundCounter = 1;
 
     // Game static parameters
     private final String gameId;
@@ -59,6 +61,7 @@ public class Game {
     private final int startingBirdHandSize;
     private final int startingBonusHandSize;
     private final int numberOfRounds;
+    private final int numberOfTurnsRound1;
     private final boolean noGoalFirst;
 
     // Logger
@@ -91,6 +94,7 @@ public class Game {
         this.startingBirdHandSize = startingBirdHandSize;
         this.startingBonusHandSize = startingBonusHandSize;
         this.numberOfRounds = 4;
+        this.numberOfTurnsRound1 = 8;
         this.noGoalFirst = false;
 
         logger.debug(String.format("Parameters:\nSeed : %s\nstartingBirdHandSize : %s\nstartingBonusHandSize : %s\nwithNectar : %s\nexpansions : %s\nplayers : %s",
@@ -140,23 +144,31 @@ public class Game {
         }
         Collections.shuffle(allGoals, random);
         if (noGoalFirst) {
-            goals = Stream.concat(
+            rounds = Stream.concat(
                     allGoals.stream()
-                            .filter(g -> g.getName().equals("No Goal"))
+                            .filter(g -> Constants.NO_GOAL.equals(g.getName()))
                             .findAny()
+                            .map(g -> new Round(numberOfTurnsRound1, g))
                             .stream(),
                     allGoals.stream()
                             .filter(g -> expansions.contains(g.getExpansion()))
                             .filter(g -> !g.isDuet())
-                            .filter(g -> !g.getName().equals("No Goal"))
-                            .limit(numberOfRounds)
+                            .filter(g -> !Constants.NO_GOAL.equals(g.getName()))
+                            .limit(numberOfRounds - 1)
+                            .map(g -> new Round(numberOfTurnsRound1, g))
             ).toList();
         } else {
-            goals = allGoals.stream()
+            rounds = allGoals.stream()
                     .filter(g -> expansions.contains(g.getExpansion()))
                     .filter(g -> !g.isDuet())
                     .limit(numberOfRounds)
+                    .map(g -> new Round(numberOfTurnsRound1, g))
                     .toList();
+        }
+        int i = 0;
+        for (Round round : rounds) {
+            round.setPlayerStartingRound(i);
+            i = (i + 1) % players.size();
         }
 
         logger.unnecessary("Game setup completed");
@@ -213,20 +225,6 @@ public class Game {
         return drawnCards;
     }
 
-    //*****************************************************************
-    // STATIC MEMBERS
-    //*****************************************************************
-
-    /** Finds a bird card by its ID from the full card list. */
-    public BirdCard getBirdCardById(int birdId) {
-        return birdCards.stream().filter(b -> b.getId() == birdId).findAny().orElseThrow(IllegalArgumentException::new);
-    }
-
-    /** Finds a bonus card by its ID from the full card list. */
-    public BonusCard getBonusCardById(int bonusId) {
-        return bonusCards.stream().filter(b -> b.getId() == bonusId).findAny().orElseThrow(IllegalArgumentException::new);
-    }
-
     /**
      * Finds a player in this game by their Discord user ID.
      *
@@ -250,7 +248,20 @@ public class Game {
         }
     }
 
+    public void advanceRound() {
+        roundCounter++;
+        if (roundCounter >= rounds.size()) {
+            // TODO: implement game end
+        }
+    }
+
+    /** Returns the player currently having their turn */
     public Player getCurrentPlayer() {
         return players.get(currentPlayerIndex);
+    }
+
+    /** Returns the current round */
+    public Round getCurrentRound() {
+        return rounds.get(roundCounter);
     }
 }

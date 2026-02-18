@@ -1,6 +1,7 @@
 package game.ui.discord.commands;
 
 import game.Game;
+import game.components.meta.Round;
 import game.components.subcomponents.Goal;
 import game.service.DiscordBotService;
 import game.ui.discord.enumeration.Constants;
@@ -52,7 +53,7 @@ public class SeeGoals implements SlashCommand {
     }
 
     public static void seeGoals(IReplyCallback event, Game currentGame) {
-        List<Goal> goals = currentGame.getGoals();
+        List<Goal> goals = currentGame.getRounds().stream().map(Round::getRoundEndGoal).toList();
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle("End-of-Round Goals");
         embed.setColor(0xe67e22);

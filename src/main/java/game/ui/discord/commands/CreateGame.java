@@ -9,11 +9,13 @@ import game.components.subcomponents.BirdCard;
 import game.components.subcomponents.BonusCard;
 import game.components.subcomponents.Card;
 import game.service.GameService;
+import game.ui.discord.DiscordBot;
 import game.ui.discord.enumeration.Constants;
 import game.ui.discord.enumeration.DiscordObject;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -47,8 +49,8 @@ public class CreateGame implements SlashCommand {
 
     @Override
     public void handle(SlashCommandInteractionEvent event) {
-        // TODO: get the default game channel
-        GameLobby lobby = GameService.getInstance().createLobby(event.getUser(), null);
+        TextChannel botChannel = event.getJDA().getTextChannelById(DiscordBot.DEFAULT_GAME_CHANNEL);
+        GameLobby lobby = GameService.getInstance().createLobby(event.getUser(), botChannel);
 
         MessageEmbed embed = buildLobbyEmbed(lobby);
         List<ActionRow> components = buildLobbyComponents(lobby);
@@ -97,8 +99,9 @@ public class CreateGame implements SlashCommand {
     private static List<ActionRow> buildConfigComponents(GameLobby lobby) {
         String lobbyId = lobby.getLobbyId();
 
-        // Row 1: Expansion multi-select menu
-        List<SelectOption> expansionOptions = Arrays.stream(Expansion.values())
+        // Row 1: Expansion multi-select menu (non-promo)
+        List<Expansion> mainExpansions = Arrays.stream(Expansion.values()).filter(e -> !e.isPromo()).toList();
+        List<SelectOption> expansionOptions = mainExpansions.stream()
                 .map(exp -> {
                     SelectOption opt = SelectOption.of(exp.getLabel(), exp.name());
                     if (lobby.getExpansions().contains(exp)) {
@@ -111,8 +114,27 @@ public class CreateGame implements SlashCommand {
         StringSelectMenu expansionMenu = StringSelectMenu.create(DiscordObject.CREATE_GAME_EXPANSION_SELECT_MENU.name() + ":" + lobbyId)
                 .setPlaceholder("Select expansions")
                 .setMinValues(0)
-                .setMaxValues(Expansion.values().length)
+                .setMaxValues(mainExpansions.size())
                 .addOptions(expansionOptions)
+                .build();
+
+        // Row 2: Promo pack multi-select menu
+        List<Expansion> promoExpansions = Arrays.stream(Expansion.values()).filter(Expansion::isPromo).toList();
+        List<SelectOption> promoOptions = promoExpansions.stream()
+                .map(exp -> {
+                    SelectOption opt = SelectOption.of(exp.getLabel(), exp.name());
+                    if (lobby.getExpansions().contains(exp)) {
+                        opt = opt.withDefault(true);
+                    }
+                    return opt;
+                })
+                .toList();
+
+        StringSelectMenu promoMenu = StringSelectMenu.create(DiscordObject.CREATE_GAME_PROMO_SELECT_MENU.name() + ":" + lobbyId)
+                .setPlaceholder("Select promo packs")
+                .setMinValues(0)
+                .setMaxValues(promoExpansions.size())
+                .addOptions(promoOptions)
                 .build();
 
         // Row 2: Board type + Test data + Set seed buttons
@@ -137,6 +159,7 @@ public class CreateGame implements SlashCommand {
 
         return List.of(
                 ActionRow.of(expansionMenu),
+                ActionRow.of(promoMenu),
                 ActionRow.of(boardTypeButton, testDataButton, setSeedButton),
                 ActionRow.of(decrementButton, incrementButton),
                 ActionRow.of(startButton)

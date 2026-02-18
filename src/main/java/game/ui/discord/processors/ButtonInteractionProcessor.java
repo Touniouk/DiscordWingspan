@@ -641,12 +641,9 @@ public class ButtonInteractionProcessor {
 
     static DiscordMessage buildLayEggsHabitatMessage(Game game, Player player, int maxEggs) {
         String gameId = game.getGameId();
-        int eggsRemaining = maxEggs - player.getHand().getTotalTempEggs();
 
-        StringBuilder content = new StringBuilder();
-        content.append(Constants.PICK_ACTION).append(BoardAction.LAY_EGGS.getLabel()).append("\n\n");
-        content.append(Constants.CHOOSE_EGGS_TO_LAY + "Lay up to **").append(maxEggs).append("** on your birds\n");
-        content.append(Constants.LAY_EGGS_REMAINING).append(eggsRemaining).append("\n\n");
+        int eggsRemaining = maxEggs - player.getHand().getTotalTempEggs();
+        StringBuilder content = getLayEggsMessage(player, maxEggs);
 
         HabitatEnum[] habitats = { HabitatEnum.FOREST, HabitatEnum.GRASSLAND, HabitatEnum.WETLAND };
         boolean[] habitatHasRoom = new boolean[3];
@@ -698,6 +695,16 @@ public class ButtonInteractionProcessor {
         return new DiscordMessage(content.toString(), rows);
     }
 
+    private static StringBuilder getLayEggsMessage(Player player, int maxEggs) {
+        int eggsRemaining = maxEggs - player.getHand().getTotalTempEggs();
+
+        StringBuilder content = new StringBuilder();
+        content.append(Constants.PICK_ACTION).append(BoardAction.LAY_EGGS.getLabel()).append("\n\n");
+        content.append(Constants.CHOOSE_EGGS_TO_LAY + "Lay up to **").append(maxEggs).append("** eggs on your birds\n");
+        content.append(Constants.LAY_EGGS_REMAINING + "**").append(eggsRemaining).append("**\n\n");
+        return content;
+    }
+
     static int parseMaxEggsFromMessage(String content) {
         Matcher matcher = Pattern.compile("Lay up to \\*\\*(\\d+)\\*\\* eggs").matcher(content);
         return matcher.find() ? Integer.parseInt(matcher.group(1)) : 2;
@@ -723,12 +730,9 @@ public class ButtonInteractionProcessor {
         String gameId = game.getGameId();
         Habitat habitat = player.getBoard().getHabitat(habitatEnum);
         List<BirdCard> birds = habitat.getBirds();
-        int eggsRemaining = maxEggs - player.getHand().getTotalTempEggs();
 
-        StringBuilder content = new StringBuilder();
-        content.append(Constants.PICK_ACTION).append(BoardAction.LAY_EGGS.getLabel()).append("\n\n");
-        content.append(Constants.CHOOSE_EGGS_TO_LAY).append(maxEggs).append("** eggs on your birds\n");
-        content.append(Constants.LAY_EGGS_REMAINING).append(eggsRemaining).append("\n\n");
+        int eggsRemaining = maxEggs - player.getHand().getTotalTempEggs();
+        StringBuilder content = getLayEggsMessage(player, maxEggs);
         content.append(habitatEnum.getEmoji().getEmoteId()).append(" ").append(habitatEnum.getJsonValue()).append(" birds:\n");
 
         List<String> birdsInHabitat = new ArrayList<>();

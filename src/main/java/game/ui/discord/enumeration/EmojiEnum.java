@@ -44,8 +44,8 @@ public enum EmojiEnum {
     FOREST("forest", "<:forest:1471704285430415410>"),
 
     // BEAK
-    BEAK_RIGHT("beakright", "<:beakright:1471704268527501393>"),
-    BEAK_LEFT("beakleft", "<:beakleft:1471704266673750088>"),
+    BEAK_RIGHT("beak-right", "<:beakright:1471704268527501393>"),
+    BEAK_LEFT("beak-left", "<:beakleft:1471704266673750088>"),
 
     // POWERS
     PREDATOR("predator", "<:predator:1471704301494603886>"),

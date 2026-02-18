@@ -4,4 +4,5 @@ public class Constants {
     public static final String BIRD_JSON = "birds.json";
     public static final String BONUS_JSON = "bonus.json";
     public static final String GOAL_JSON = "goals.json";
+    public static final String NO_GOAL = "No Goal";
 }

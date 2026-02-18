@@ -16,7 +16,7 @@ public class GameLobby {
     private final User creator;
     private final TextChannel gameChannel;
     private final List<User> players = new ArrayList<>();
-    private List<Expansion> expansions = new ArrayList<>(List.of(Expansion.values()));
+    private List<Expansion> expansions = new ArrayList<>(java.util.Arrays.stream(Expansion.values()).filter(e -> !e.isPromo()).toList());
     private boolean nectarBoard = false;
     private boolean testData = false;
     private long seed = 0; // 0 = random

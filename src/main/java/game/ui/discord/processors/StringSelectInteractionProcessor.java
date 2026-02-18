@@ -533,18 +533,23 @@ public class StringSelectInteractionProcessor {
             return;
         }
 
-        if (DiscordObject.valueOf(ctx.componentId()) == DiscordObject.CREATE_GAME_EXPANSION_SELECT_MENU) {
-            updateExpansions(event, ctx.lobby());
-        } else {
-            logger.warn("Unmatched lobby select: " + ctx.componentId());
+        switch (DiscordObject.valueOf(ctx.componentId())) {
+            case CREATE_GAME_EXPANSION_SELECT_MENU -> updateExpansions(event, ctx.lobby(), false);
+            case CREATE_GAME_PROMO_SELECT_MENU -> updateExpansions(event, ctx.lobby(), true);
+            default -> logger.warn("Unmatched lobby select: " + ctx.componentId());
         }
     }
 
-    private static void updateExpansions(StringSelectInteractionEvent event, GameLobby lobby) {
+    private static void updateExpansions(StringSelectInteractionEvent event, GameLobby lobby, boolean isPromo) {
         List<Expansion> selected = event.getValues().stream()
                 .map(Expansion::valueOf)
                 .collect(Collectors.toList());
-        lobby.setExpansions(selected);
+        // Keep the other type's selections, replace only the changed type
+        List<Expansion> kept = lobby.getExpansions().stream()
+                .filter(e -> e.isPromo() != isPromo)
+                .collect(Collectors.toList());
+        kept.addAll(selected);
+        lobby.setExpansions(kept);
         event.editMessageEmbeds(CreateGame.buildLobbyEmbed(lobby))
                 .setComponents(CreateGame.buildLobbyComponents(lobby))
                 .queue();

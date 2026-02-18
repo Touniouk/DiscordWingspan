@@ -11,12 +11,14 @@ import java.util.stream.Collectors;
  */
 @Getter
 public enum Expansion {
+    // Expansions
     BASE("Base Game", "originalcore"),
     SWIFT_START("Swift Start", "swiftstart"),
     EUROPE("Europe", "european"),
     OCEANIA("Oceania", "oceania"),
     ASIA("Asia", "asia"),
     AMERICAS("Americas", "americas"),
+    // Promo packs
     PROMO_ASIA("Promo Asia", "promoAsia"),
     PROMO_CA("Promo CA", "promoCA"),
     PROMO_EUROPE("Promo Europe", "promoEurope"),
@@ -32,6 +34,10 @@ public enum Expansion {
     Expansion(String label, String jsonName) {
         this.label = label;
         this.jsonName = jsonName;
+    }
+
+    public boolean isPromo() {
+        return name().startsWith("PROMO_");
     }
 
     public static Expansion fromJsonName(String jsonName) {

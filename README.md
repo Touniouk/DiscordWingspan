@@ -111,19 +111,24 @@ src/main/resources/
   - [ ] If bird can only go in one habitat, add it automatically
   - [x] Add food cost to message
   - [x] "which bird to remove egg" should have egg count
+  - [ ] select food cost of bird by default
 - [x] Implement gaining food
   - [x] Reroll feeder not working
 - [x] Implement laying eggs
 - [x] Implement drawing cards
-- [ ] Implement resource discard on basic actions
+- [ ] Once we've taken a turn, delete the buttons from the turn message
+- [x] Implement resource discard on basic actions
   - [x] Discard eggs to draw cards
   - [x] Discard cards to gain food
   - [x] Discard food to gain eggs
-  - [ ] Discard cards to gain eggs
+  - [x] Discard cards to gain eggs
+- Add buttons to see birdinfo and bonusInfo on the seeBoard embed
 - [ ] Implement brown powers
 - [ ] Implement white powers
 - [ ] Implement pink powers
 - [ ] Implement end of rounds
+  - [ ] Setup end of rounds
+  - [ ] Decount after each round
 - [ ] Implement bonus card scoring
 - [ ] Playing with nectar
 - [ ] Nectar scoring
