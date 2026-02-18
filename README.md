@@ -109,7 +109,8 @@ src/main/resources/
 - [x] Implement playing bird
   - [x] Disable +- buttons when spending food
   - [ ] If bird can only go in one habitat, add it automatically
-  - [ ] Add food cost to message
+  - [x] Add food cost to message
+  - [x] "which bird to remove egg" should have egg count
 - [ ] Implement gaining food
   - [ ] Reroll feeder not working
 - [x] Implement laying eggs

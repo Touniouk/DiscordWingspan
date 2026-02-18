@@ -54,7 +54,7 @@ public class BirdCard extends Card {
                 getFacingString();
     }
 
-    private String getFoodCostString() {
+    public String getFoodCostString() {
         return getFoodCost().stream()
                 .map(alt -> alt.stream()
                         .map(f -> f.getEmoji().getEmoteId())

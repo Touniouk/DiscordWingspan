@@ -83,12 +83,7 @@ public class SeeTray implements SlashCommand {
         if (bird.getFoodCost().isEmpty() || bird.getFoodCost().stream().allMatch(List::isEmpty)) {
             sb.append(EmojiEnum.NO_FOOD.getEmoteId());
         } else {
-            String foodCost = bird.getFoodCost().stream()
-                    .map(alt -> alt.stream()
-                            .map(f -> f.getEmoji().getEmoteId())
-                            .collect(Collectors.joining("")))
-                    .collect(Collectors.joining(" / "));
-            sb.append(foodCost);
+            sb.append(bird.getFoodCostString());
         }
         sb.append("\n");
 

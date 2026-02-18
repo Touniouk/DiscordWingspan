@@ -146,7 +146,11 @@ public class StringSelectInteractionProcessor {
             return;
         }
 
-        List<SelectOption> birdsToRemoveEggsFrom = new ArrayList<>(currentPlayer.getBoard().getPlayedBirdsWithEggs().stream().map(bird -> SelectOption.of(bird.getName(), bird.getName())).toList());
+        List<SelectOption> birdsToRemoveEggsFrom = new ArrayList<>(currentPlayer.getBoard()
+                .getPlayedBirdsWithEggs().stream()
+                .map(bird -> SelectOption.of(bird.getName(), bird.getName())
+                        .withDescription(bird.getNest().getNumberOfEggs() + " egg" + (bird.getNest().getNumberOfEggs() != 1 ? "s" : "")))
+                .toList());
         if (numberOfEggsToSpend > 1) {
             birdsToRemoveEggsFrom.add(SelectOption.of(Constants.SAME_AGAIN, Constants.SAME_AGAIN));
         }
@@ -238,21 +242,23 @@ public class StringSelectInteractionProcessor {
     private static void takeTurnActionChoicePlayBirdSelectBirdSubMenu(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
         currentPlayer.getHand().resetTempPantry();
 
-        String birdToPlay;
+        String birdName;
         try {
-            birdToPlay = event.getValues().stream().findFirst().orElseThrow(() -> new GameInputException("No bird selected"));
+            birdName = event.getValues().stream().findFirst().orElseThrow(() -> new GameInputException("No bird selected"));
         } catch (GameInputException ex) {
             event.reply(ex.getMessage()).setEphemeral(true).queue();
             return;
         }
 
-        logger.debug(currentPlayer.getUser().getName() + " selected bird to play: " + birdToPlay);
+        logger.debug(currentPlayer.getUser().getName() + " selected bird to play: " + birdName);
 
+        BirdCard birdToPlay = currentPlayer.getHand().getBirdByName(birdName).orElseThrow();
         List<ActionRow> components = getChooseFoodSelector(currentGame, currentPlayer);
 
         event.editMessage(Constants.PICK_ACTION + BoardAction.PLAY_BIRD.getLabel() + "\n\n" +
-                        Constants.CHOOSE_BIRD_TO_PLAY + birdToPlay + "\n\n" +
+                        Constants.CHOOSE_BIRD_TO_PLAY + birdName + "\n\n" +
                         Constants.CHOOSE_FOOD_TO_USE + "\n" +
+                        "Food cost: " + birdToPlay.getFoodCostString() + "\n" +
                         "Food used: " + EmojiEnum.getFoodAsEmojiList(currentPlayer.getHand().getTempPantrySpentFood()) + "\n" +
                         "Food in hand: " + EmojiEnum.getFoodAsEmojiList(currentPlayer.getHand().getTempPantryAvailableFood()))
                 .setComponents(components)

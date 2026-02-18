@@ -223,9 +223,12 @@ public class ButtonInteractionProcessor {
 
         List<ActionRow> components = StringSelectInteractionProcessor.getChooseFoodSelector(gameContext.game(), gameContext.player());
 
+        String birdName = message[1].substring(message[1].indexOf(Constants.CHOOSE_BIRD_TO_PLAY) + Constants.CHOOSE_BIRD_TO_PLAY.length());
+        BirdCard birdToPlay = gameContext.player().getHand().getBirdByName(birdName).orElseThrow();
         event.editMessage(message[0] + "\n\n" + // Pick action...
                         message[1] + "\n\n" + // Chose to play bird...
                         Constants.CHOOSE_FOOD_TO_USE + "\n" +
+                        "Food cost: " + birdToPlay.getFoodCostString() + "\n" +
                         "Food used: " + EmojiEnum.getFoodAsEmojiList(gameContext.player().getHand().getTempPantrySpentFood()) + "\n" +
                         "Food in hand: " + EmojiEnum.getFoodAsEmojiList(gameContext.player().getHand().getTempPantryAvailableFood()))
                 .setComponents(components)

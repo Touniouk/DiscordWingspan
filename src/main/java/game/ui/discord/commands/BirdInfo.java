@@ -86,11 +86,7 @@ public class BirdInfo implements SlashCommand {
         if (bird.getFoodCost().isEmpty() || bird.getFoodCost().stream().allMatch(List::isEmpty)) {
             foodCost = EmojiEnum.NO_FOOD.getEmoteId() + " None";
         } else {
-            foodCost = bird.getFoodCost().stream()
-                    .map(alt -> alt.stream()
-                            .map(f -> f.getEmoji().getEmoteId())
-                            .collect(Collectors.joining(" ")))
-                    .collect(Collectors.joining(" / "));
+            foodCost = bird.getFoodCostString();
         }
         embed.addField("Food Cost", foodCost, true);
 
