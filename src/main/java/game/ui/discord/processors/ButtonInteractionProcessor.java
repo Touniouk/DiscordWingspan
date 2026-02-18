@@ -1223,8 +1223,22 @@ public class ButtonInteractionProcessor {
                 .map(p -> p.getUser().getAsMention())
                 .collect(Collectors.joining(" "));
 
-        event.editMessage("Game `" + gameId + "` created with " + playersAsMention + "\n")
-                .setEmbeds()
+        String boardType = lobby.isNectarBoard() ? "Oceania" : "Base";
+        String expansionNames = lobby.getExpansions().stream()
+                .map(e -> e.getLabel())
+                .collect(Collectors.joining(", "));
+
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle("\uD83C\uDFB2 Wingspan — Game Started!")
+                .setColor(0x2ecc71)
+                .setDescription(playersAsMention)
+                .addField("\uD83C\uDD94 Game ID", "`" + gameId + "`", true)
+                .addField("\uD83C\uDF0D Board", boardType, true)
+                .addField("\uD83C\uDFB4 Expansions", expansionNames, true)
+                .setFooter("Pick your starting hand to begin!");
+
+        event.editMessageEmbeds(embed.build())
+                .setContent("")
                 .setComponents(ActionRow.of(pickHandButton, seeFeederButton, seeTrayButton, seeGoalsButton))
                 .queue();
     }
