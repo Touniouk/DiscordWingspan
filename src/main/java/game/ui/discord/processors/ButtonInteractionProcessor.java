@@ -3,6 +3,7 @@ package game.ui.discord.processors;
 import game.Game;
 import game.GameLobby;
 import game.Player;
+import game.components.enums.Expansion;
 import game.components.enums.FoodType;
 import game.components.enums.HabitatEnum;
 import game.components.meta.BoardAction;
@@ -306,6 +307,12 @@ public class ButtonInteractionProcessor {
         currentGame.getGameChannel().sendMessage(
                 event.getUser().getAsMention() + " confirmed their starting hand"
         ).queue();
+
+        if (currentGame.getLaunchMessageId() != 0) {
+            currentGame.getGameChannel().editMessageComponentsById(currentGame.getLaunchMessageId()).queue();
+            currentGame.setLaunchMessageId(0);
+        }
+
         GameService.getInstance().checkAllPlayersReady(currentGame);
     }
 
@@ -531,7 +538,7 @@ public class ButtonInteractionProcessor {
         Map<Integer, FoodType> foodChoices = resolveFoodChoices(event, currentGame);
         logger.debug(currentPlayer.getUser().getName() + " submitted Gain Food, choices=" + foodChoices);
         String allFood = accumulateFoodGained(event, currentPlayer, foodChoices);
-
+        currentPlayer.setLastActionAsString("Gained food: " + allFood);
         event.editMessage(Constants.PICK_ACTION + "Gain Food\n\n" +
                         Constants.CHOOSE_FOOD_FROM_FEEDER + allFood)
                 .setComponents()
@@ -887,8 +894,9 @@ public class ButtonInteractionProcessor {
         logger.debug(player.getUser().getName() + " submitted Lay Eggs, totalEggs=" + totalEggs + ", assignments=" + player.getHand().getTempEggsToLay());
         player.getHand().confirmLayEggs();
 
-        event.editMessage(Constants.PICK_ACTION + BoardAction.LAY_EGGS.getLabel() + "\n\n" +
-                        EmojiEnum.EGG.getEmoteId() + " Laid " + totalEggs + " egg" + (totalEggs != 1 ? "s" : ""))
+        String turnSummary = EmojiEnum.EGG.getEmoteId() + " Laid " + totalEggs + " egg" + (totalEggs != 1 ? "s" : "") + "\n";
+        player.setLastActionAsString("Laid eggs: "+ turnSummary);
+        event.editMessage(Constants.PICK_ACTION + BoardAction.LAY_EGGS.getLabel() + "\n\n" + turnSummary)
                 .setComponents()
                 .queue();
 
@@ -1032,10 +1040,9 @@ public class ButtonInteractionProcessor {
                 .toList();
 
         int drawnCards = game.confirmDrawBirdSelection(player, selectedTrayIndexes);
-
         String drawnBirds = "Drew **" + drawnCards + "** card" + (drawnCards == 1 ? "" : "s") + "\n";
-        String message = Constants.PICK_ACTION + BoardAction.DRAW_CARDS.getLabel() + "\n\n" +
-                drawnBirds;
+        player.setLastActionAsString(drawnBirds);
+        String message = Constants.PICK_ACTION + BoardAction.DRAW_CARDS.getLabel() + "\n\n" + drawnBirds;
         event.editMessage(message)
                 .setComponents()
                 .queue();
@@ -1212,6 +1219,7 @@ public class ButtonInteractionProcessor {
     private static void launchGame(ButtonInteractionEvent event, GameLobby lobby) {
         boolean testData = lobby.isTestData();
         Game game = GameService.getInstance().createGameFromLobby(lobby);
+        game.setLaunchMessageId(event.getMessageIdLong());
         String gameId = game.getGameId();
 
         if (testData) {
@@ -1229,7 +1237,7 @@ public class ButtonInteractionProcessor {
 
         String boardType = lobby.isNectarBoard() ? "Oceania" : "Base";
         String expansionNames = lobby.getExpansions().stream()
-                .map(e -> e.getLabel())
+                .map(Expansion::getLabel)
                 .collect(Collectors.joining(", "));
 
         EmbedBuilder embed = new EmbedBuilder()

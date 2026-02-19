@@ -50,6 +50,8 @@ public class Game {
     // Game dynamic parameters
     @Setter
     private GameState state;
+    @Setter
+    private long launchMessageId;
     private int currentPlayerIndex;
     private int turnCounter = 1;
     private int roundCounter = 1;
@@ -263,5 +265,15 @@ public class Game {
     /** Returns the current round */
     public Round getCurrentRound() {
         return rounds.get(roundCounter);
+    }
+
+    /** Send a message in the game channel to say who did what this turn */
+    public void sendTurnSummaryMessage(Player currentPlayer) {
+        String str = String.format("Round (%s/%s), turn (%s/%s): %s %s",
+                roundCounter, rounds.size(),
+                turnCounter, getCurrentRound().getNumberOfTurns(),
+                currentPlayer.getUser().getAsMention(),
+                currentPlayer.getLastActionAsString());
+        gameChannel.sendMessage(str).queue();
     }
 }

@@ -115,7 +115,7 @@ public class GameService {
         game.getGameChannel().sendMessage(
                 player.getUser().getAsMention() + " please take your turn (turn " + game.getTurnCounter() + ")")
                 .addActionRow(takeTurnButton, seeBoardButton, seeFeederButton, seeTrayButton, seeGoalsButton)
-                .queue();
+                .queue(message -> player.setTurnPromptMessageId(message.getIdLong()));
     }
 
     /**
@@ -229,6 +229,14 @@ public class GameService {
      */
     public void endTurn(Game currentGame, Player currentPlayer) {
         logger.info("Ending turn for player " + currentPlayer.getUser().getName());
+
+        // Remove the buttons from the previous turn message
+        if (currentPlayer.getTurnPromptMessageId() != 0) {
+            currentGame.getGameChannel().editMessageComponentsById(currentPlayer.getTurnPromptMessageId()).queue();
+            currentPlayer.setTurnPromptMessageId(0);
+        }
+
+        currentGame.sendTurnSummaryMessage(currentPlayer);
         PlayerStateMachine.transition(currentPlayer, PlayerState.WAITING_FOR_TURN);
         currentGame.advanceTurn();
         Player nextPlayer = currentGame.getPlayers().get(currentGame.getCurrentPlayerIndex());

@@ -26,6 +26,8 @@ public class Player {
     private final Hand hand;
 
     private PlayerState state;
+    private long turnPromptMessageId;
+    private String lastActionAsString;
 
     private final Logger logger = new Logger(Player.class, LogLevel.ALL);
 
