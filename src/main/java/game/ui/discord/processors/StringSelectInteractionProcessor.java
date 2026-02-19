@@ -22,6 +22,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.ItemComponent;
@@ -114,7 +115,8 @@ public class StringSelectInteractionProcessor {
                 .setComponents()
                 .queue();
 
-        BirdCard birdToPlay = currentPlayer.getHand().getBirdByName(birdName).orElse(null);
+        BirdCard birdToPlay = currentPlayer.getHand().getBirdByName(birdName).orElseThrow();
+        currentPlayer.setLastActionAsString(" played " + birdToPlay.getName() + " in their " + habitatEnum.getJsonValue());
         GameService.getInstance().confirmPlayBird(currentGame, currentPlayer, birdToPlay, habitatEnum, birdsToRemoveEggsFrom, twoEggsFromSameBird ? 2 : 1);
     }
 
@@ -123,6 +125,7 @@ public class StringSelectInteractionProcessor {
     }
 
     private static void takeTurnActionChoicePlayBirdPickHabitat(StringSelectInteractionEvent event, Game currentGame, Player currentPlayer) {
+        String[] message = event.getMessage().getContentRaw().split("\n\n");
         HabitatEnum habitatEnum = HabitatEnum.valueOf(event.getValues().get(0));
         Habitat habitat = currentPlayer.getBoard().getHabitat(habitatEnum);
         logger.debug(currentPlayer.getUser().getName() + " picked habitat: " + habitatEnum.getJsonValue() + " (" + habitat.getBirds().size() + "/" + Habitat.numberOfSpaceInHabitat + " birds, egg cost: " + habitat.getNumberOfEggsToSpend() + ")");
@@ -136,7 +139,6 @@ public class StringSelectInteractionProcessor {
         int numberOfEggsToSpend = habitat.getNumberOfEggsToSpend();
         if (numberOfEggsToSpend == 0) {
             // Skip the egg step
-            String[] message = event.getMessage().getContentRaw().split("\n\n");
             String newMessage = message[0] + "\n\n" + // Pick action
                             message[1] + "\n\n" + // Choose bird
                             message[2] + "\n\n" + // Choose food
@@ -161,7 +163,6 @@ public class StringSelectInteractionProcessor {
                 .addOptions(birdsToRemoveEggsFrom)
                 .build();
 
-        String[] message = event.getMessage().getContentRaw().split("\n\n");
         event.editMessage(message[0] + "\n\n" + // Pick action
                         message[1] + "\n\n" + // Choose bird
                         message[2] + "\n\n" + // Choose food
@@ -253,6 +254,11 @@ public class StringSelectInteractionProcessor {
         logger.debug(currentPlayer.getUser().getName() + " selected bird to play: " + birdName);
 
         BirdCard birdToPlay = currentPlayer.getHand().getBirdByName(birdName).orElseThrow();
+
+        // If we have the exact food, automatically select it
+        currentPlayer.automaticallySelectFood(birdToPlay);
+
+        // Render the choose food step
         List<ActionRow> components = getChooseFoodSelector(currentGame, currentPlayer);
 
         event.editMessage(Constants.PICK_ACTION + BoardAction.PLAY_BIRD.getLabel() + "\n\n" +
@@ -543,7 +549,7 @@ public class StringSelectInteractionProcessor {
     private static void updateExpansions(StringSelectInteractionEvent event, GameLobby lobby, boolean isPromo) {
         List<Expansion> selected = event.getValues().stream()
                 .map(Expansion::valueOf)
-                .collect(Collectors.toList());
+                .toList();
         // Keep the other type's selections, replace only the changed type
         List<Expansion> kept = lobby.getExpansions().stream()
                 .filter(e -> e.isPromo() != isPromo)

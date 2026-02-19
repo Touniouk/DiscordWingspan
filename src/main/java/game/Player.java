@@ -3,6 +3,7 @@ package game;
 import game.components.Board;
 import game.components.Hand;
 import game.components.NectarBoard;
+import game.components.enums.FoodType;
 import game.components.subcomponents.BirdCard;
 import game.components.subcomponents.BonusCard;
 import game.components.subcomponents.Card;
@@ -14,6 +15,9 @@ import lombok.Setter;
 import net.dv8tion.jda.api.entities.User;
 import util.LogLevel;
 import util.Logger;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a player in the game, holding their Discord user, board, hand, and current state.
@@ -70,5 +74,30 @@ public class Player {
         }
 
         PlayerStateMachine.transition(this, PlayerState.READY);
+    }
+
+    public void automaticallySelectFood(BirdCard birdToPlay) {
+        if (birdToPlay.getFoodCost().size() == 1) {
+            List<FoodType> foodCost = birdToPlay.getFoodCost().get(0);
+            int numberOfWilds = 0;
+            for (FoodType food : foodCost) {
+                if (FoodType.WILD == food) {
+                    numberOfWilds++;
+                } else if (this.getHand().getTempPantryAvailableFood().get(food) > 0) {
+                    this.getHand().getTempPantrySpentFood().merge(food, 1, Integer::sum);
+                }
+            }
+            for (Map.Entry<FoodType, Integer> entry : this.getHand().getTempPantryAvailableFood().entrySet()) {
+                if (numberOfWilds <= 0) break;
+                if (entry.getValue() > 0) {
+                    this.getHand().getTempPantrySpentFood().merge(entry.getKey(), 1, Integer::sum);
+                    numberOfWilds--;
+                }
+            }
+            // TODO: check nectar?
+        }
+        this.getHand().getTempPantrySpentFood().forEach((k, v) -> {
+            this.getHand().getTempPantryAvailableFood().merge(k, v, (acc, i) -> acc - i);
+        });
     }
 }

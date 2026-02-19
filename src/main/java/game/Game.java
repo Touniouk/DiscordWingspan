@@ -58,6 +58,7 @@ public class Game {
 
     // Game static parameters
     private final String gameId;
+    private final boolean withNectar;
     private final TextChannel gameChannel;
     private final List<Expansion> expansions;
     private final int startingBirdHandSize;
@@ -98,6 +99,7 @@ public class Game {
         this.numberOfRounds = 4;
         this.numberOfTurnsRound1 = 8;
         this.noGoalFirst = false;
+        this.withNectar = withNectar;
 
         logger.debug(String.format("Parameters:\nSeed : %s\nstartingBirdHandSize : %s\nstartingBonusHandSize : %s\nwithNectar : %s\nexpansions : %s\nplayers : %s",
                 GAME_SEED, startingBirdHandSize, startingBonusHandSize, withNectar, expansions, StringUtil.getListAsString(Arrays.stream(playerUsers).map(User::getName).toList(), ", ")));

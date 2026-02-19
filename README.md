@@ -108,23 +108,23 @@ src/main/resources/
   - [ ] Set active game and use that as the game id param
 - [x] Implement playing bird
   - [x] Disable +- buttons when spending food
-  - [ ] If bird can only go in one habitat, add it automatically
+  - [ ] If bird can only go in one habitat, add it automatically (ok this is very tricky actually)
   - [x] Add food cost to message
   - [x] "which bird to remove egg" should have egg count
-  - [ ] select food cost of bird by default
+  - [x] select food cost of bird by default
 - [x] Implement gaining food
   - [x] Reroll feeder not working
 - [x] Implement laying eggs
 - [x] Implement drawing cards
-- [ ] Once we've taken a turn, delete the buttons from the turn message
+- [x] Once we've taken a turn, delete the buttons from the turn message
 - [x] Implement resource discard on basic actions
   - [x] Discard eggs to draw cards
   - [x] Discard cards to gain food
   - [x] Discard food to gain eggs
   - [x] Discard cards to gain eggs
-- Add buttons to see birdinfo and bonusInfo on the seeBoard embed
+- [ ] Add buttons to see birdinfo and bonusInfo on the seeBoard embed
 - [ ] Implement brown powers
-- [ ] Implement white powers
+- [ ] Implement white powers <-- this
 - [ ] Implement pink powers
 - [ ] Implement end of rounds
   - [ ] Setup end of rounds
